@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Seiho Study Admin</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <header class="admin-topbar">
+    <div class="admin-brand"><span>S</span><div><b>Seiho Study</b><small>CONTENT ADMIN</small></div></div>
+    <div class="top-actions">
+      <button class="button ghost" id="exportButton">JSONエクスポート</button>
+      <button class="button ghost" id="backupButton">全データバックアップ</button>
+      <button class="button primary" id="addButton">＋ 新規問題</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-row">
+      <div><p class="eyebrow">QUESTION DATABASE</p><h1>問題コンテンツ管理</h1><p class="muted">問題・解説・引用を、アプリ本体から独立して管理します。</p></div>
+      <div class="summary-cards">
+        <article><small>登録問題</small><b id="totalCount">0</b></article>
+        <article><small>解説登録</small><b id="explainedCount">0</b></article>
+        <article><small>引用登録</small><b id="quotedCount">0</b></article>
+      </div>
+    </section>
+
+    <section class="import-panel">
+      <div><b>一括インポート</b><p>JSONまたはCSVを読み込むと、IDが同じ問題は更新、新しいIDは追加されます。</p></div>
+      <div class="import-actions">
+        <label class="button secondary">JSONを読み込む<input type="file" id="jsonInput" accept=".json,application/json"></label>
+        <label class="button secondary">CSVを読み込む<input type="file" id="csvInput" accept=".csv,text/csv"></label>
+        <button class="button ghost" id="pasteJsonButton">JSONを貼り付け</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <input id="searchInput" type="search" placeholder="ID・科目・問題文を検索">
+        <select id="subjectFilter"><option value="">すべての科目</option></select>
+        <select id="yearFilter"><option value="">すべての年度</option></select>
+        <select id="formFilter"><option value="">すべてのフォーム</option></select>
+        <select id="categoryFilter"><option value="">すべてのジャンル</option></select>
+        <input id="numberFilter" type="number" min="1" placeholder="問題番号">
+        <button class="button ghost" id="clearFilters">クリア</button>
+      </div>
+
+      <div class="table-meta"><span id="resultCount">0件</span><span>見出しをクリックして並び替え</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>科目</th><th data-sort="year">年度 ↕</th><th>フォーム</th>
+              <th data-sort="questionNumber">問題番号 ↕</th><th data-sort="category">ジャンル ↕</th>
+              <th>出題形式</th><th>難易度</th><th>解説</th><th>引用</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="questionRows"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button class="button ghost" id="previousPage">← 前へ</button>
+        <span id="pageLabel">1 / 1</span>
+        <button class="button ghost" id="nextPage">次へ →</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="editorDialog">
+    <form id="questionForm" class="editor">
+      <div class="editor-head">
+        <div><p class="eyebrow">QUESTION EDITOR</p><h2 id="editorTitle">問題を編集</h2></div>
+        <button type="button" class="close-button" id="closeEditor" aria-label="閉じる">×</button>
+      </div>
+
+      <div class="form-section">
+        <h3>基本情報</h3>
+        <div class="form-grid">
+          <label>ID<input name="id" required placeholder="2023-A-001"></label>
+          <label>科目<input name="subject" required></label>
+          <label>年度<input name="year" type="number" required></label>
+          <label>フォーム<input name="form" required></label>
+          <label>問題番号<input name="questionNumber" type="number" min="1" required></label>
+          <label>問題形式<input name="questionType" required></label>
+          <label>ジャンル<input name="category"></label>
+          <label>難易度<select name="difficulty"><option>基礎</option><option selected>標準</option><option>応用</option></select></label>
+          <label class="wide">タグ（カンマ区切り）<input name="tags"></label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>問題と正解</h3>
+        <label>問題文<textarea name="question" rows="7" required></textarea></label>
+        <label>選択肢（1行ごとに「ラベル｜選択肢」）<textarea name="choices" rows="6" required placeholder="ア｜選択肢1&#10;イ｜選択肢2"></textarea></label>
+        <div class="form-grid">
+          <label>正解ラベル<input name="answer" required placeholder="ア"></label>
+          <label>正解表示<input name="answerText" placeholder="正解の選択肢本文"></label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>解説</h3>
+        <label>解説<textarea name="explanation" rows="5"></textarea></label>
+        <label>覚えるポイント<textarea name="keyPoint" rows="3"></textarea></label>
+        <label>間違えやすいポイント<textarea name="commonMistake" rows="3"></textarea></label>
+      </div>
+
+      <div class="form-section">
+        <h3>テキスト引用</h3>
+        <div class="form-grid">
+          <label class="wide">テキスト名<input name="textbook"></label>
+          <label>章<input name="chapter"></label>
+          <label>節<input name="section"></label>
+          <label>ページ番号<input name="page"></label>
+        </div>
+        <label>引用文・根拠要約<textarea name="quote" rows="5"></textarea></label>
+      </div>
+
+      <div class="editor-actions">
+        <button type="button" class="button danger" id="deleteQuestion">追加・編集データを削除</button>
+        <span class="action-spacer"></span>
+        <button type="button" class="button ghost" id="cancelEditor">キャンセル</button>
+        <button type="submit" class="button primary">保存する</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pasteDialog">
+    <form id="pasteForm" class="paste-editor">
+      <div class="editor-head">
+        <div><p class="eyebrow">PASTE JSON</p><h2>JSONを貼り付けて取り込む</h2></div>
+        <button type="button" class="close-button" id="closePaste" aria-label="閉じる">×</button>
+      </div>
+      <p class="muted">JSONファイルの内容をそのまま貼り付けてください。ファイル選択と同じ検証・登録処理を実行します。</p>
+      <textarea id="pasteJsonText" rows="16" placeholder='[{"id":"2023-A-001", ...}]'></textarea>
+      <div class="editor-actions">
+        <button type="button" class="button ghost" id="cancelPaste">キャンセル</button>
+        <button type="submit" class="button primary">JSONを取り込む</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>
