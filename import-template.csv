@@ -1,2 +1,0 @@
-id,subject,year,form,questionNumber,category,questionType,question,choices,answer,answerText,explanation,keyPoint,commonMistake,difficulty,tags,textbook,chapter,section,page,quote
-2023-A-001,生命保険総論,2023,A,1,生命保険の仕組み,正しいものを1つ選ぶ,ここに問題文を入力します。,"[{""label"":""ア"",""text"":""選択肢1""},{""label"":""イ"",""text"":""選択肢2""}]",ア,選択肢1,ここに解説を入力します。,ここに覚えるポイントを入力します。,ここに間違えやすいポイントを入力します。,標準,"[""2023年度"",""フォームA""]",2026年版 生命保険講座 生命保険総論,第1章 生命保険の仕組み,項目名,1,ここに引用文または根拠要約を入力します。
