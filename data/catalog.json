@@ -1,7 +1,24 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-28T00:17:48.555173Z",
+  "updatedAt": "2026-06-28T02:17:45.814Z",
   "subjects": [
+    {
+      "subject": "生命保険計理",
+      "subjectSlug": "seiho-keiri-math",
+      "years": [
+        {
+          "year": 2024,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-keiri-math/2024/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:17:38.845Z"
+            }
+          ]
+        }
+      ]
+    },
     {
       "subject": "生命保険総論",
       "subjectSlug": "seiho-souron",
