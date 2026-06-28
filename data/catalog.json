@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-28T02:43:07.529Z",
+  "subjects": [
+    {
+      "subject": "生命保険計理",
+      "subjectSlug": "seiho-keiri-math",
+      "years": [
+        {
+          "year": 2022,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-keiri-math/2022/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:24:00.452Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-keiri-math/2022/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:24:06.715Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-keiri-math/2022/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:24:13.213Z"
+            }
+          ]
+        },
+        {
+          "year": 2023,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-keiri-math/2023/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:42:35.873Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-keiri-math/2023/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:42:50.198Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-keiri-math/2023/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:42:59.051Z"
+            }
+          ]
+        },
+        {
+          "year": 2024,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-keiri-math/2024/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:17:38.845Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-keiri-math/2024/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:23:15.268Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-keiri-math/2024/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T02:23:22.861Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "生命保険総論",
+      "subjectSlug": "seiho-souron",
+      "years": [
+        {
+          "year": 2022,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2022/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2022/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2022/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            }
+          ]
+        },
+        {
+          "year": 2024,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2024/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2024/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2024/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
