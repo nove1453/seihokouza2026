@@ -1,4 +1,11 @@
 import { loadQuestions } from "./question-store.js?v=20260628-3";
+import * as pdfjsLib from "./vendor/pdfjs/pdf.mjs";
+import { parsePdfPageNumber } from "./pdf-utils.js?v=20260629-1";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "./vendor/pdfjs/pdf.worker.mjs",
+  import.meta.url,
+).href;
 
 const STORAGE_KEY = "seiho-study-history-v1";
 const DAILY_GOAL = 20;
@@ -18,6 +25,7 @@ let session = null;
 let activeSubject = localStorage.getItem("seiho-study-subject") || "all";
 let activeYear = localStorage.getItem("seiho-study-year") || "all";
 let activeForm = localStorage.getItem("seiho-study-form") || "all";
+let pdfRenderSequence = 0;
 
 function scopedQuestions() {
   return questions.filter((question) =>
@@ -264,19 +272,19 @@ function renderQuiz() {
       </article>
       ${session.answered ? explanationHTML(q, session.selected) : ""}
     </div>`;
+  if (session.answered && session.pdfOpenId === q.id) {
+    const renderSequence = ++pdfRenderSequence;
+    requestAnimationFrame(() => renderEvidencePdf(q, renderSequence));
+  }
 }
 
 function explanationHTML(q, selected) {
   const correct = selected === q.answer;
   const selectedText = q.choices.find((choice) => choice.label === selected)?.text || "未回答";
   const evidence = q.evidence || {};
-  const fallbackPdfPage = Number(String(evidence.page || "").match(/\d+/)?.[0]) || null;
-  const pdfPage = Number(evidence.pdfPage) || fallbackPdfPage;
+  const pdfPage = parsePdfPageNumber(evidence);
   const pdfPath = evidence.pdfPath || "";
   const pdfOpen = session?.pdfOpenId === q.id;
-  const pdfUrl = pdfPath && pdfPage
-    ? `${pdfPath}#page=${pdfPage}&view=FitH&toolbar=0`
-    : "";
   return `
     <div id="answerExplanation" class="answer-explanation">
       <div class="result-banner ${correct ? "correct" : "incorrect"}">
@@ -303,12 +311,14 @@ function explanationHTML(q, selected) {
               ${pdfPath && pdfPage
                 ? `<button class="secondary-button pdf-toggle" data-toggle-pdf="${escapeHTML(q.id)}">${pdfOpen ? "閉じる" : "該当ページを見る"}</button>
                    <span>PDF ${pdfPage}ページ目</span>`
-                : `<span class="pdf-unavailable">${pdfPath ? "PDFページ未登録" : "PDF未登録"}</span>`}
+                : `<button class="secondary-button pdf-toggle" disabled>該当ページを見る</button>
+                   <span class="pdf-unavailable">${pdfPath ? "PDFページ未登録" : "PDF未登録"}</span>`}
             </div>
-            ${session?.pdfError ? `<p class="pdf-error">${escapeHTML(session.pdfError)}</p>` : ""}
             ${pdfOpen ? `
               <div class="pdf-viewer" id="pdfViewer">
-                <iframe src="${escapeHTML(pdfUrl)}" title="${escapeHTML(evidence.textbook)} テキストP${escapeHTML(String(evidence.page))}" loading="lazy"></iframe>
+                <p class="pdf-status" id="pdfStatus" role="status">PDFを読み込み中...</p>
+                <canvas id="pdfCanvas" aria-label="${escapeHTML(evidence.textbook)} PDF ${pdfPage}ページ目" hidden></canvas>
+                <a class="pdf-fallback-link" href="${escapeHTML(pdfPath)}" target="_blank" rel="noopener">PDFを別タブで開く</a>
               </div>` : ""}
           </div>
         </section>
@@ -351,8 +361,8 @@ async function toggleEvidencePdf() {
   const q = currentQuestion();
   if (!q || !session?.answered) return;
   if (session.pdfOpenId === q.id) {
+    pdfRenderSequence += 1;
     session.pdfOpenId = null;
-    session.pdfError = null;
     renderQuiz();
     requestAnimationFrame(() => {
       document.querySelector("#answerExplanation")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -360,23 +370,74 @@ async function toggleEvidencePdf() {
     return;
   }
   const pdfPath = q.evidence?.pdfPath;
-  const fallbackPdfPage = Number(String(q.evidence?.page || "").match(/\d+/)?.[0]) || null;
-  const pdfPage = Number(q.evidence?.pdfPage) || fallbackPdfPage;
+  const pdfPage = parsePdfPageNumber(q.evidence);
   if (!pdfPath || !pdfPage) return;
-  session.pdfError = null;
-  try {
-    const response = await fetch(pdfPath, { method: "HEAD", cache: "no-store" });
-    if (!response.ok) throw new Error(`PDFを読み込めません（${response.status}）`);
-    session.pdfOpenId = q.id;
-  } catch {
-    session.pdfOpenId = null;
-    session.pdfError = "PDFファイルが見つかりません。管理者に登録状況を確認してください。";
-  }
+  session.pdfOpenId = q.id;
   renderQuiz();
   requestAnimationFrame(() => {
-    document.querySelector(session.pdfOpenId ? "#pdfViewer" : "#answerExplanation")
+    document.querySelector("#pdfViewer")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
+}
+
+async function renderEvidencePdf(q, renderSequence) {
+  const viewer = document.querySelector("#pdfViewer");
+  const canvas = document.querySelector("#pdfCanvas");
+  const status = document.querySelector("#pdfStatus");
+  const pageNumber = parsePdfPageNumber(q.evidence);
+  const pdfPath = q.evidence?.pdfPath;
+  if (!viewer || !canvas || !status || !pdfPath || !pageNumber) return;
+
+  status.className = "pdf-status";
+  status.textContent = "PDFを読み込み中...";
+  canvas.hidden = true;
+
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument(pdfPath).promise;
+    if (renderSequence !== pdfRenderSequence || session?.pdfOpenId !== q.id) return;
+    if (pageNumber > pdf.numPages) {
+      throw new RangeError(`指定ページ（${pageNumber}）はPDFの総ページ数（${pdf.numPages}）を超えています。`);
+    }
+
+    const page = await pdf.getPage(pageNumber);
+    if (renderSequence !== pdfRenderSequence || session?.pdfOpenId !== q.id) return;
+
+    const baseViewport = page.getViewport({ scale: 1 });
+    const availableWidth = Math.max(280, viewer.clientWidth - 24);
+    const cssScale = availableWidth / baseViewport.width;
+    const viewport = page.getViewport({ scale: cssScale });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const context = canvas.getContext("2d", { alpha: false });
+
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+    await page.render({
+      canvasContext: context,
+      viewport,
+      transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0],
+    }).promise;
+    if (renderSequence !== pdfRenderSequence || session?.pdfOpenId !== q.id) return;
+
+    canvas.dataset.renderedPage = String(pageNumber);
+    canvas.hidden = false;
+    status.hidden = true;
+    page.cleanup();
+  } catch (error) {
+    if (renderSequence !== pdfRenderSequence || session?.pdfOpenId !== q.id) return;
+    canvas.hidden = true;
+    status.hidden = false;
+    status.className = "pdf-status error";
+    status.textContent = "該当ページを表示できませんでした";
+    const detail = document.createElement("small");
+    detail.textContent = error instanceof RangeError ? error.message : "PDFファイルまたはページ情報を確認してください。";
+    status.append(detail);
+  } finally {
+    if (pdf) await pdf.destroy();
+  }
 }
 
 function toggleBookmark() {
