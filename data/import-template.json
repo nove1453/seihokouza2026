@@ -1,0 +1,42 @@
+[
+  {
+    "id": "2023-A-001",
+    "subject": "生命保険総論",
+    "year": 2023,
+    "form": "A",
+    "questionNumber": 1,
+    "category": "生命保険の仕組み",
+    "questionType": "正しいものを1つ選ぶ",
+    "question": "ここに問題文を入力します。",
+    "choices": [
+      {
+        "label": "ア",
+        "text": "選択肢1"
+      },
+      {
+        "label": "イ",
+        "text": "選択肢2"
+      }
+    ],
+    "answer": "ア",
+    "answerText": "選択肢1",
+    "explanation": "ここに解説を入力します。",
+    "keyPoint": "ここに覚えるポイントを入力します。",
+    "commonMistake": "ここに間違えやすいポイントを入力します。",
+    "difficulty": "標準",
+    "tags": [
+      "2023年度",
+      "フォームA"
+    ],
+    "evidence": {
+      "textbook": "2026年版 生命保険講座 生命保険総論",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "項目名",
+      "page": "1",
+      "quote": "ここに引用文または根拠要約を入力します。",
+      "textbookId": "seiho-souron-2026",
+      "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
+      "pdfPage": 9
+    }
+  }
+]

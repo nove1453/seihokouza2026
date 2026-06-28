@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-28T10:30:22.561Z",
+  "subjects": [
+    {
+      "subject": "生命保険計理",
+      "subjectSlug": "seiho-keiri-math",
+      "textbook": {
+        "textbookId": "seiho-keiri-math-2026",
+        "title": "2026年版 生命保険講座 生命保険計理",
+        "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf"
+      },
+      "years": []
+    },
+    {
+      "subject": "生命保険総論",
+      "subjectSlug": "seiho-souron",
+      "textbook": {
+        "textbookId": "seiho-souron-2026",
+        "title": "2026年版 生命保険講座 生命保険総論",
+        "pdfPath": "data/textbooks/seiho-souron-2026.pdf"
+      },
+      "years": [
+        {
+          "year": 2022,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2022/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2022/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2022/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            }
+          ]
+        },
+        {
+          "year": 2023,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2023/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2023/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2023/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            }
+          ]
+        },
+        {
+          "year": 2024,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2024/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2024/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2024/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T10:08:22.495085Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
