@@ -44,6 +44,15 @@ h2 { margin: 0; letter-spacing: -.03em; }
 .import-panel b { font-size: 14px; }
 .import-panel p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
 .import-actions { display: flex; gap: 8px; }
+.import-result { margin-bottom: 18px; padding: 16px 20px; border: 1px solid #b9d8cd; border-radius: 16px; background: #f4fbf8; }
+.import-result b { font-size: 14px; }
+.import-result p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.download-panel { margin-bottom: 18px; padding: 18px 20px; border: 1px solid #b6c99c; border-radius: 16px; background: #f7faec; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.download-panel b { font-size: 14px; }
+.download-panel p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+.download-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.download-link { min-height: 40px; padding: 0 14px; border-radius: 10px; display: inline-flex; align-items: center; background: var(--green); color: #fff; text-decoration: none; font-size: 11px; font-weight: 800; }
+.download-link.secondary { border: 1px solid #b9c9a3; background: #fff; color: var(--green); }
 .validation-panel { margin-bottom: 18px; padding: 18px 20px; border: 1px solid #e3aaa4; border-radius: 16px; background: #fff1ef; color: #7e2c27; }
 .validation-head { display: flex; justify-content: space-between; align-items: start; }
 .validation-head b { font-size: 14px; }

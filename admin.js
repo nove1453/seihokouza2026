@@ -17,6 +17,10 @@ const form = document.querySelector("#questionForm");
 const toast = document.querySelector("#toast");
 const validationPanel = document.querySelector("#validationPanel");
 const validationErrors = document.querySelector("#validationErrors");
+const importResult = document.querySelector("#importResult");
+const downloadPanel = document.querySelector("#downloadPanel");
+const downloadLinks = document.querySelector("#downloadLinks");
+const directSaveButton = document.querySelector("#directSaveButton");
 
 let sets = new Map();
 let catalog = null;
@@ -26,6 +30,7 @@ let page = 1;
 let sort = { key: "year", direction: 1 };
 let editingId = null;
 let dirtyPaths = new Set();
+let downloadUrls = [];
 
 const fields = {
   search: document.querySelector("#searchInput"),
@@ -50,6 +55,28 @@ function showToast(message) {
 function clearErrors() {
   validationPanel.hidden = true;
   validationErrors.innerHTML = "";
+}
+
+function showImportResult({ added = 0, updated = 0, deleted = 0, total = questions.length, paths = [] }) {
+  const actions = [
+    added ? `${added}問追加` : "",
+    updated ? `${updated}問更新` : "",
+    deleted ? `${deleted}問削除` : "",
+  ].filter(Boolean).join("・") || "変更なし";
+  document.querySelector("#importResultTitle").textContent = `処理完了：${actions}`;
+  const unchanged = added === 0 && updated > 0
+    ? "すべて既存IDの更新なので、登録問題の総数は変わりません。"
+    : "";
+  document.querySelector("#importResultText").textContent =
+    `登録問題は合計${total.toLocaleString()}問です。${unchanged} 対象：${paths.join("、") || "なし"}`;
+  importResult.hidden = false;
+}
+
+function clearPreparedDownloads() {
+  downloadUrls.forEach((url) => URL.revokeObjectURL(url));
+  downloadUrls = [];
+  downloadLinks.innerHTML = "";
+  downloadPanel.hidden = true;
 }
 
 function showErrors(errors, title = "保存できませんでした") {
@@ -135,6 +162,8 @@ async function reload() {
   const library = await loadContentLibrary();
   sets = new Map([...library.sets].map(([path, set]) => [path, { ...set, questions: set.questions.map(normalizeQuestion) }]));
   dirtyPaths.clear();
+  clearPreparedDownloads();
+  importResult.hidden = true;
   clearErrors();
   rebuildQuestionIndex();
   refreshFilterOptions();
@@ -225,6 +254,7 @@ function stageQuestions(records, suppliedSlug = "") {
   });
   if (errors.length) return { saved: [], errors };
 
+  const existingIds = new Set(checked.questions.filter((question) => locationForId(question.id)).map((question) => question.id));
   const now = new Date().toISOString();
   checked.questions.forEach((question) => {
     const previous = locationForId(question.id);
@@ -257,7 +287,16 @@ function stageQuestions(records, suppliedSlug = "") {
   refreshFilterOptions();
   updateSummary();
   applyFilters();
-  return { saved: checked.questions, errors: [] };
+  clearPreparedDownloads();
+  return {
+    saved: checked.questions,
+    added: checked.questions.length - existingIds.size,
+    updated: existingIds.size,
+    paths: [...new Set(checked.questions.map((question) =>
+      questionSetPath(subjectSlugFor(question.subject, suppliedSlug), question.year, question.form)
+    ))],
+    errors: [],
+  };
 }
 
 function parseCSV(source) {
@@ -304,7 +343,8 @@ async function importFile(file, type) {
       showToast("JSONにエラーがあります。変更は反映していません");
       return;
     }
-    showToast(`${result.saved.length}問を作業データへ追加・更新しました。ZIPを出力してください`);
+    showImportResult({ ...result, total: questions.length });
+    showToast(`${result.added}問追加・${result.updated}問更新しました。出力ファイルを準備してください`);
   } catch (error) {
     showErrors([{ index: -1, id: "", field: "JSON", message: error.message || "読み込みに失敗しました" }], "インポートを中止しました");
   } finally {
@@ -312,17 +352,19 @@ async function importFile(file, type) {
   }
 }
 
-function downloadBlob(blob, filename) {
+function makeDownloadLink(blob, filename, label, secondary = false) {
   const url = URL.createObjectURL(blob);
+  downloadUrls.push(url);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  anchor.className = `download-link${secondary ? " secondary" : ""}`;
+  anchor.textContent = label;
+  return anchor;
 }
 
-function downloadJSON(payload, filename) {
-  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), filename);
+function jsonBlob(payload) {
+  return new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
 }
 
 function dataFiles() {
@@ -336,6 +378,80 @@ function dataFiles() {
     });
   }
   return files;
+}
+
+function prepareDownloads(catalogOnly = false) {
+  clearPreparedDownloads();
+  const files = dataFiles();
+  if (!catalogOnly) {
+    downloadLinks.append(makeDownloadLink(
+      makeZip(files),
+      `seiho-data-${new Date().toISOString().slice(0, 10)}.zip`,
+      "data一式のZIPをダウンロード"
+    ));
+  }
+  const visibleFiles = catalogOnly
+    ? files.filter((file) => file.path === "data/catalog.json" || dirtyPaths.has(file.path))
+    : files.filter((file) => file.path === "data/catalog.json" || dirtyPaths.has(file.path));
+  visibleFiles.forEach((file) => {
+    const filename = file.path === "data/catalog.json" ? "catalog.json" : file.path.split("/").at(-1);
+    downloadLinks.append(makeDownloadLink(
+      new Blob([file.content], { type: "application/json" }),
+      filename,
+      file.path,
+      true
+    ));
+  });
+  if (visibleFiles.length === 1 && dirtyPaths.size === 0) {
+    const note = document.createElement("span");
+    note.className = "muted";
+    note.textContent = "変更済み問題JSONはありません";
+    downloadLinks.append(note);
+  }
+  downloadPanel.hidden = false;
+  downloadPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+  showToast("ダウンロードリンクを作成しました");
+}
+
+async function detectDirectSave() {
+  try {
+    const response = await fetch("./api/admin/capabilities", { cache: "no-store" });
+    if (!response.ok) return;
+    const capabilities = await response.json();
+    if (!capabilities.fileWrite) return;
+    directSaveButton.hidden = false;
+    directSaveButton.title = `保存先: ${capabilities.root}/data`;
+  } catch {
+    // 静的ホスティングではダウンロード出力だけを表示する。
+  }
+}
+
+async function saveDirectlyToData() {
+  directSaveButton.disabled = true;
+  const originalText = directSaveButton.textContent;
+  directSaveButton.textContent = "保存中…";
+  try {
+    const response = await fetch("./api/admin/save-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files: dataFiles() }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "dataフォルダへ保存できませんでした");
+    dirtyPaths.clear();
+    rebuildQuestionIndex();
+    clearPreparedDownloads();
+    document.querySelector("#importResultTitle").textContent = `dataフォルダへ保存完了（${result.count}ファイル）`;
+    document.querySelector("#importResultText").textContent =
+      "問題JSONとcatalog.jsonをプロジェクトへ直接保存しました。学習画面を再読み込みすると反映されます。";
+    importResult.hidden = false;
+    showToast("プロジェクトのdataフォルダへ直接保存しました");
+  } catch (error) {
+    showErrors([{ index: -1, id: "", field: "data保存", message: error.message }], "dataフォルダへ保存できません");
+  } finally {
+    directSaveButton.disabled = false;
+    directSaveButton.textContent = originalText;
+  }
 }
 
 Object.values(fields).forEach((field) => field.addEventListener("input", () => { page = 1; applyFilters(); }));
@@ -364,7 +480,9 @@ document.querySelector("#deleteQuestion").addEventListener("click", () => {
   if (!located.set.questions.length) sets.delete(located.path);
   dialog.close();
   rebuildQuestionIndex(); refreshFilterOptions(); updateSummary(); applyFilters();
-  showToast("作業データから削除しました。ZIPを出力してdataフォルダへ配置してください");
+  clearPreparedDownloads();
+  showImportResult({ deleted: 1, total: questions.length, paths: [located.path] });
+  showToast("作業データから削除しました。出力ファイルを準備してください");
 });
 rows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-edit-id]");
@@ -388,21 +506,22 @@ form.addEventListener("submit", (event) => {
     return;
   }
   dialog.close();
-  showToast("作業データへ保存しました。ZIPを出力してください");
+  showImportResult({ ...result, total: questions.length });
+  showToast("作業データへ保存しました。出力ファイルを準備してください");
 });
 document.querySelector("#jsonInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "json"));
 document.querySelector("#csvInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "csv"));
 document.querySelector("#exportButton").addEventListener("click", () => {
-  downloadJSON(buildCatalog(sets), "catalog.json");
-  showToast("catalog.json を出力しました");
+  prepareDownloads(true);
 });
 document.querySelector("#backupButton").addEventListener("click", () => {
-  downloadBlob(makeZip(dataFiles()), `seiho-data-${new Date().toISOString().slice(0, 10)}.zip`);
-  showToast("dataフォルダ一式をZIPで出力しました");
+  prepareDownloads(false);
 });
+directSaveButton.addEventListener("click", saveDirectlyToData);
 
 try {
   await reload();
+  await detectDirectSave();
 } catch (error) {
   showErrors([{ index: -1, id: "", field: "起動", message: error.message }], "問題データを読み込めません");
 }

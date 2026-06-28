@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Seiho Study Admin</title>
-  <link rel="stylesheet" href="./admin.css">
+  <link rel="stylesheet" href="./admin.css?v=20260628-2">
 </head>
 <body>
   <header class="admin-topbar">
     <div class="admin-brand"><span>S</span><div><b>Seiho Study</b><small>CONTENT ADMIN</small></div></div>
     <div class="top-actions">
       <a class="button ghost" href="./">学習画面へ</a>
-      <button class="button ghost" id="exportButton">catalog.json</button>
-      <button class="button primary" id="backupButton">data一式をZIP出力</button>
+      <button class="button ghost" id="exportButton">個別JSONを準備</button>
+      <button class="button primary" id="backupButton">出力ファイルを準備</button>
+      <button class="button primary direct-save" id="directSaveButton" hidden>dataへ直接保存</button>
       <button class="button primary" id="addButton">＋ 新規問題</button>
     </div>
   </header>
@@ -32,18 +33,31 @@
       <b>静的アプリでの保存方法</b>
       <ol>
         <li>JSONを読み込む、または問題を編集します。</li>
-        <li>「data一式をZIP出力」を押します。</li>
-        <li>ZIP内の <code>data</code> フォルダを、このアプリの <code>data</code> フォルダへ上書き配置します。</li>
+        <li>ローカル開発時は「dataへ直接保存」を押します。</li>
+        <li>静的公開時は出力ファイルを準備し、ZIP内の <code>data</code> を上書き配置します。</li>
       </ol>
-      <p>ブラウザからGitHubやローカルファイルへ直接書き込めないため、編集内容はZIPを配置した時点で正式反映されます。学習履歴は別にlocalStorageへ残ります。</p>
+      <p>専用開発サーバーで起動するとdataへ直接保存できます。通常の静的サーバーではZIP・個別JSONへ自動的に切り替わります。学習履歴は別にlocalStorageへ残ります。</p>
     </section>
 
     <section class="import-panel">
-      <div><b>一括インポート</b><p>科目・年度・フォームを自動判定し、保存先とcatalogを生成します。エラーが1件でもあれば全件を取り込みません。</p></div>
+      <div><b>一括インポート</b><p>科目・年度・フォームを自動判定します。同じIDは更新扱いとなるため登録総数は増えません。エラーが1件でもあれば全件を取り込みません。</p></div>
       <div class="import-actions">
         <label class="button secondary">JSONを読み込む<input type="file" id="jsonInput" accept=".json,application/json"></label>
         <label class="button secondary">CSVを読み込む<input type="file" id="csvInput" accept=".csv,text/csv"></label>
       </div>
+    </section>
+
+    <section class="import-result" id="importResult" hidden>
+      <b id="importResultTitle">インポート結果</b>
+      <p id="importResultText"></p>
+    </section>
+
+    <section class="download-panel" id="downloadPanel" hidden>
+      <div>
+        <b>出力ファイルの準備ができました</b>
+        <p>ZIP、または必要な個別JSONのリンクを押して保存してください。ZIPにはdataフォルダ構造が含まれます。</p>
+      </div>
+      <div class="download-links" id="downloadLinks"></div>
     </section>
 
     <section class="validation-panel" id="validationPanel" hidden>
@@ -143,6 +157,6 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./admin.js"></script>
+  <script type="module" src="./admin.js?v=20260628-2"></script>
 </body>
 </html>
