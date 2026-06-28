@@ -1,33 +1,12 @@
-const DB_NAME = "seiho-study-content";
-const DB_VERSION = 1;
-const STORE_NAME = "questions";
-const CATALOG_URL = "./data/catalog.json";
-const FALLBACK_PACK = "./data/questions.json";
+export const CATALOG_URL = "./data/catalog.json";
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "id" });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function transaction(mode, operation) {
-  return openDatabase().then((db) => new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, mode);
-    const store = tx.objectStore(STORE_NAME);
-    const result = operation(store);
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  }));
-}
+export const SUBJECT_SLUGS = Object.freeze({
+  "生命保険総論": "seiho-souron",
+  "生命保険経理": "seiho-keiri",
+  "危険選択": "kiken-sentaku",
+  "生命保険計理": "seiho-keiri-math",
+  "約款と法律": "yakkan-houritsu",
+});
 
 function text(value) {
   return value == null ? "" : String(value).trim();
@@ -37,143 +16,208 @@ function normalizeChoices(choices) {
   if (!Array.isArray(choices)) return [];
   return choices.map((choice, index) => {
     if (typeof choice === "string") {
-      return { label: String.fromCharCode(65 + index), text: choice };
+      return { label: String.fromCharCode(65 + index), text: text(choice) };
     }
-    return { label: text(choice.label), text: text(choice.text) };
+    return { label: text(choice?.label), text: text(choice?.text) };
   }).filter((choice) => choice.label && choice.text);
 }
 
-export function normalizeQuestion(input) {
+export function normalizeQuestion(input = {}) {
   const choices = normalizeChoices(input.choices);
   const answer = text(input.answer);
-  const answerText = text(input.answerText) || choices.find((choice) => choice.label === answer)?.text || "";
   const evidence = input.evidence || {};
   return {
     id: text(input.id),
     subject: text(input.subject),
     year: Number(input.year) || 0,
-    form: text(input.form),
+    form: text(input.form).toUpperCase(),
     questionNumber: Number(input.questionNumber) || 0,
     category: text(input.category),
     questionType: text(input.questionType),
     question: text(input.question),
     choices,
     answer,
-    answerText,
+    answerText: text(input.answerText) || choices.find((choice) => choice.label === answer)?.text || "",
     explanation: text(input.explanation),
     keyPoint: text(input.keyPoint),
     commonMistake: text(input.commonMistake),
     difficulty: text(input.difficulty) || "標準",
-    tags: Array.isArray(input.tags) ? input.tags.map(text).filter(Boolean) : text(input.tags).split(/[、,]/).map(text).filter(Boolean),
+    tags: Array.isArray(input.tags)
+      ? input.tags.map(text).filter(Boolean)
+      : text(input.tags).split(/[、,]/).map(text).filter(Boolean),
     chapter: text(input.chapter || evidence.chapter),
     section: text(input.section || evidence.section),
     evidence: {
       textbook: text(evidence.textbook),
       chapter: text(evidence.chapter || input.chapter),
       section: text(evidence.section || input.section),
-      page: text(evidence.page) || "要確認",
+      page: text(evidence.page),
       quote: text(evidence.quote || evidence.summary),
     },
   };
 }
 
-export function validateQuestion(input) {
-  const question = normalizeQuestion(input);
-  const errors = [];
-  if (!question.id) errors.push("ID");
-  if (!question.subject) errors.push("科目");
-  if (!question.year) errors.push("年度");
-  if (!question.form) errors.push("フォーム");
-  if (!question.questionNumber) errors.push("問題番号");
-  if (!question.questionType) errors.push("問題形式");
-  if (!question.question) errors.push("問題文");
-  if (!question.choices.length) errors.push("選択肢");
-  if (!question.answer) errors.push("正解");
-  if (question.answer && !question.choices.some((choice) => choice.label === question.answer)) errors.push("正解に対応する選択肢");
-  return { question, errors };
+export function subjectSlugFor(subject, supplied = "") {
+  const known = SUBJECT_SLUGS[text(subject)];
+  if (known) return known;
+  const candidate = text(supplied).toLowerCase();
+  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(candidate)) return candidate;
+  return "";
 }
 
-async function loadBaseQuestions() {
-  let paths = [FALLBACK_PACK];
-  try {
-    const response = await fetch(CATALOG_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error(`catalog ${response.status}`);
-    const catalog = await response.json();
-    paths = catalog.packs.map((pack) => pack.path).filter(Boolean);
-  } catch {
-    // Backward-compatible fallback for older deployments.
+export function questionSetPath(subjectSlug, year, form) {
+  return `data/questions/${subjectSlug}/${Number(year)}/${text(form).toUpperCase()}.json`;
+}
+
+export function catalogEntries(catalog) {
+  if (Array.isArray(catalog?.packs)) return catalog.packs.filter((entry) => entry.path);
+  const entries = [];
+  for (const subject of catalog?.subjects || []) {
+    for (const year of subject.years || []) {
+      for (const form of year.forms || []) {
+        entries.push({
+          subject: subject.subject,
+          subjectSlug: subject.subjectSlug,
+          year: Number(year.year),
+          ...form,
+        });
+      }
+    }
   }
-  const packs = await Promise.all(paths.map(async (path) => {
-    const response = await fetch(path, { cache: "no-store" });
-    if (!response.ok) throw new Error(`問題パックを読み込めません: ${path}`);
-    const payload = await response.json();
-    return Array.isArray(payload) ? payload : payload.questions || [];
+  return entries;
+}
+
+export async function loadCatalog() {
+  const response = await fetch(CATALOG_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`catalog.json を読み込めません（${response.status}）`);
+  const catalog = await response.json();
+  if (!Array.isArray(catalog.subjects) && !Array.isArray(catalog.packs)) {
+    throw new Error("catalog.json の形式が正しくありません");
+  }
+  return catalog;
+}
+
+export async function loadContentLibrary() {
+  const catalog = await loadCatalog();
+  const entries = catalogEntries(catalog);
+  const loaded = await Promise.all(entries.map(async (entry) => {
+    const response = await fetch(`./${entry.path.replace(/^\.?\//, "")}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`問題JSONを読み込めません: ${entry.path}`);
+    const raw = await response.json();
+    const records = Array.isArray(raw) ? raw : raw.questions;
+    if (!Array.isArray(records)) throw new Error(`${entry.path}: questions が配列ではありません`);
+    const subject = text(raw.subject || entry.subject || records[0]?.subject);
+    const year = Number(raw.year || entry.year || records[0]?.year);
+    const form = text(raw.form || entry.form || records[0]?.form).toUpperCase();
+    const subjectSlug = subjectSlugFor(subject, raw.subjectSlug || entry.subjectSlug);
+    const questions = records.map(normalizeQuestion);
+    return {
+      path: entry.path,
+      set: {
+        version: Number(raw.version) || 1,
+        subject,
+        subjectSlug,
+        year,
+        form,
+        updatedAt: raw.updatedAt || entry.updatedAt || catalog.updatedAt,
+        questions,
+      },
+    };
   }));
-  return packs.flat().map(normalizeQuestion);
-}
-
-async function loadOverrides() {
-  try {
-    return await new Promise(async (resolve, reject) => {
-      const db = await openDatabase();
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const request = tx.objectStore(STORE_NAME).getAll();
-      request.onsuccess = () => resolve(request.result.map(normalizeQuestion));
-      request.onerror = () => reject(request.error);
-    });
-  } catch {
-    return [];
-  }
+  const sets = new Map(loaded.map(({ path, set }) => [path, set]));
+  const questions = loaded.flatMap(({ set }) => set.questions).sort(compareQuestions);
+  return { catalog, sets, questions };
 }
 
 export async function loadQuestions() {
-  const [base, overrides] = await Promise.all([loadBaseQuestions(), loadOverrides()]);
-  const merged = new Map(base.map((question) => [question.id, question]));
-  overrides.forEach((question) => merged.set(question.id, question));
-  return [...merged.values()].sort((a, b) =>
-    a.subject.localeCompare(b.subject, "ja") ||
+  return (await loadContentLibrary()).questions;
+}
+
+export function compareQuestions(a, b) {
+  return a.subject.localeCompare(b.subject, "ja") ||
     a.year - b.year ||
     a.form.localeCompare(b.form, "ja") ||
-    a.questionNumber - b.questionNumber
-  );
+    a.questionNumber - b.questionNumber ||
+    a.id.localeCompare(b.id, "ja");
 }
 
-export async function saveQuestion(question) {
-  const checked = validateQuestion(question);
-  if (checked.errors.length) throw new Error(`必須項目を確認してください: ${checked.errors.join("、")}`);
-  await transaction("readwrite", (store) => store.put(checked.question));
-  notifyChange();
-  return checked.question;
-}
-
-export async function saveQuestions(records) {
-  if (!Array.isArray(records)) throw new Error("問題データは配列で指定してください");
-  const checked = records.map(validateQuestion);
-  const invalid = checked.map((result, index) => ({ ...result, index })).filter((result) => result.errors.length);
-  if (invalid.length) {
-    const first = invalid[0];
-    throw new Error(`${first.index + 1}件目の必須項目を確認してください: ${first.errors.join("、")}`);
+export function validateQuestion(input, index = 0) {
+  const question = normalizeQuestion(input);
+  const errors = [];
+  const add = (field, message) => errors.push({ index, id: question.id, field, message });
+  if (!question.id) add("id", "id は必須です");
+  if (!question.subject) add("subject", "subject は必須です");
+  if (!question.year) add("year", "year は必須です");
+  if (!question.form) add("form", "form は必須です");
+  if (!question.questionNumber) add("questionNumber", "questionNumber は必須です");
+  if (!question.questionType) add("questionType", "questionType は必須です");
+  if (!question.question) add("question", "question は必須です");
+  if (!Array.isArray(input?.choices)) add("choices", "choices は配列で指定してください");
+  else if (!question.choices.length) add("choices", "choices に選択肢が必要です");
+  if (!question.answer) add("answer", "answer は必須です");
+  if (question.answer && !question.choices.some((choice) => choice.label === question.answer)) {
+    add("answer", `answer「${question.answer}」が choices.label にありません`);
   }
-  await transaction("readwrite", (store) => checked.forEach(({ question }) => store.put(question)));
-  notifyChange();
-  return checked.map(({ question }) => question);
-}
-
-export async function deleteQuestionOverride(id) {
-  await transaction("readwrite", (store) => store.delete(id));
-  notifyChange();
-}
-
-export async function exportQuestions() {
-  return loadQuestions();
-}
-
-export function notifyChange() {
-  try {
-    const channel = new BroadcastChannel("seiho-question-data");
-    channel.postMessage({ type: "questions-updated", at: new Date().toISOString() });
-    channel.close();
-  } catch {
-    // BroadcastChannel is an enhancement; reload still works without it.
+  if (question.questionType === "正誤問題") {
+    const labels = question.choices.map((choice) => choice.label);
+    if (labels.length !== 2 || !labels.includes("正") || !labels.includes("誤")) {
+      add("choices", "正誤問題の choices.label は「正」「誤」にしてください");
+    }
+    if (!["正", "誤"].includes(question.answer)) add("answer", "正誤問題の answer は「正」または「誤」です");
   }
+  if (question.questionNumber >= 31 && question.questionNumber <= 40 && !["正", "誤"].includes(question.answer)) {
+    add("answer", "31〜40問の answer は「正」または「誤」です");
+  }
+  if (!input?.evidence || typeof input.evidence !== "object") add("evidence", "evidence は必須です");
+  if (!question.evidence.page) add("evidence.page", "evidence.page は必須です（不明時は「要確認」）");
+  if (!question.evidence.quote) add("evidence.quote", "evidence.quote は必須です（不明時は「要確認」）");
+  return { question, errors };
+}
+
+export function validateQuestions(records) {
+  if (!Array.isArray(records)) {
+    return { questions: [], errors: [{ index: -1, id: "", field: "questions", message: "questions が配列ではありません" }] };
+  }
+  const checked = records.map((record, index) => validateQuestion(record, index));
+  const errors = checked.flatMap((result) => result.errors);
+  const seen = new Map();
+  checked.forEach(({ question }, index) => {
+    if (!question.id) return;
+    if (seen.has(question.id)) {
+      errors.push({ index, id: question.id, field: "id", message: `id「${question.id}」が重複しています（${seen.get(question.id) + 1}件目と重複）` });
+    } else {
+      seen.set(question.id, index);
+    }
+  });
+  return { questions: checked.map((result) => result.question), errors };
+}
+
+export function buildCatalog(sets, updatedAt = new Date().toISOString()) {
+  const grouped = new Map();
+  for (const [path, set] of sets) {
+    if (!set.questions?.length) continue;
+    const subjectKey = `${set.subject}\u0000${set.subjectSlug}`;
+    if (!grouped.has(subjectKey)) grouped.set(subjectKey, { subject: set.subject, subjectSlug: set.subjectSlug, years: new Map() });
+    const subject = grouped.get(subjectKey);
+    if (!subject.years.has(set.year)) subject.years.set(set.year, []);
+    subject.years.get(set.year).push({
+      form: set.form,
+      path,
+      questionCount: set.questions.length,
+      updatedAt: set.updatedAt || updatedAt,
+    });
+  }
+  return {
+    version: 1,
+    updatedAt,
+    subjects: [...grouped.values()]
+      .sort((a, b) => a.subject.localeCompare(b.subject, "ja"))
+      .map((subject) => ({
+        subject: subject.subject,
+        subjectSlug: subject.subjectSlug,
+        years: [...subject.years.entries()]
+          .sort(([a], [b]) => a - b)
+          .map(([year, forms]) => ({ year, forms: forms.sort((a, b) => a.form.localeCompare(b.form, "ja")) })),
+      })),
+  };
 }

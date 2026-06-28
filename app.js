@@ -7,6 +7,8 @@ const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 const dataDialog = document.querySelector("#dataDialog");
 const subjectScope = document.querySelector("#subjectScope");
+const yearScope = document.querySelector("#yearScope");
+const formScope = document.querySelector("#formScope");
 
 let questions = [];
 let history = loadHistory();
@@ -14,9 +16,15 @@ let route = "dashboard";
 let listFilter = "all";
 let session = null;
 let activeSubject = localStorage.getItem("seiho-study-subject") || "all";
+let activeYear = localStorage.getItem("seiho-study-year") || "all";
+let activeForm = localStorage.getItem("seiho-study-form") || "all";
 
 function scopedQuestions() {
-  return activeSubject === "all" ? questions : questions.filter((question) => question.subject === activeSubject);
+  return questions.filter((question) =>
+    (activeSubject === "all" || question.subject === activeSubject) &&
+    (activeYear === "all" || String(question.year) === activeYear) &&
+    (activeForm === "all" || question.form === activeForm)
+  );
 }
 
 function loadHistory() {
@@ -440,12 +448,34 @@ document.addEventListener("click", (event) => {
 });
 
 document.querySelector("#settingsButton").addEventListener("click", () => dataDialog.showModal());
-subjectScope.addEventListener("change", () => {
-  activeSubject = subjectScope.value;
-  localStorage.setItem("seiho-study-subject", activeSubject);
+function resetLearningView() {
   listFilter = "all";
   session = null;
   setRoute("dashboard");
+}
+
+subjectScope.addEventListener("change", () => {
+  activeSubject = subjectScope.value;
+  activeYear = "all";
+  activeForm = "all";
+  localStorage.setItem("seiho-study-subject", activeSubject);
+  localStorage.setItem("seiho-study-year", activeYear);
+  localStorage.setItem("seiho-study-form", activeForm);
+  renderScopeOptions();
+  resetLearningView();
+});
+yearScope.addEventListener("change", () => {
+  activeYear = yearScope.value;
+  activeForm = "all";
+  localStorage.setItem("seiho-study-year", activeYear);
+  localStorage.setItem("seiho-study-form", activeForm);
+  renderScopeOptions();
+  resetLearningView();
+});
+formScope.addEventListener("change", () => {
+  activeForm = formScope.value;
+  localStorage.setItem("seiho-study-form", activeForm);
+  resetLearningView();
 });
 document.querySelector("#exportButton").addEventListener("click", exportHistory);
 document.querySelector("#importInput").addEventListener("change", (event) => {
@@ -460,22 +490,36 @@ document.querySelector("#resetButton").addEventListener("click", () => {
   showToast("学習履歴をリセットしました");
 });
 
-function renderSubjectOptions() {
+function renderScopeOptions() {
   const subjects = [...new Set(questions.map((question) => question.subject))].sort((a, b) => a.localeCompare(b, "ja"));
   if (activeSubject !== "all" && !subjects.includes(activeSubject)) {
     activeSubject = "all";
     localStorage.setItem("seiho-study-subject", activeSubject);
   }
-  subjectScope.innerHTML = `<option value="all">すべての科目（${questions.length}問）</option>${subjects.map((subject) => {
+  subjectScope.innerHTML = `<option value="all">全科目（${questions.length}問）</option>${subjects.map((subject) => {
     const count = questions.filter((question) => question.subject === subject).length;
     return `<option value="${escapeHTML(subject)}">${escapeHTML(subject)}（${count}問）</option>`;
   }).join("")}`;
   subjectScope.value = activeSubject;
+
+  const subjectQuestions = questions.filter((question) => activeSubject === "all" || question.subject === activeSubject);
+  const years = [...new Set(subjectQuestions.map((question) => String(question.year)))].sort((a, b) => Number(b) - Number(a));
+  if (activeYear !== "all" && !years.includes(activeYear)) activeYear = "all";
+  yearScope.innerHTML = `<option value="all">全年度</option>${years.map((year) => `<option value="${year}">${year}年</option>`).join("")}`;
+  yearScope.value = activeYear;
+
+  const yearQuestions = subjectQuestions.filter((question) => activeYear === "all" || String(question.year) === activeYear);
+  const forms = [...new Set(yearQuestions.map((question) => question.form))].sort((a, b) => a.localeCompare(b, "ja"));
+  if (activeForm !== "all" && !forms.includes(activeForm)) activeForm = "all";
+  formScope.innerHTML = `<option value="all">全フォーム</option>${forms.map((form) => `<option value="${escapeHTML(form)}">Form ${escapeHTML(form)}</option>`).join("")}`;
+  formScope.value = activeForm;
+  localStorage.setItem("seiho-study-year", activeYear);
+  localStorage.setItem("seiho-study-form", activeForm);
 }
 
 async function refreshQuestions() {
   questions = await loadQuestions();
-  renderSubjectOptions();
+  renderScopeOptions();
 }
 
 try {

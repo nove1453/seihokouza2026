@@ -1,19 +1,31 @@
-import { loadQuestions, saveQuestion, saveQuestions, exportQuestions, deleteQuestionOverride } from "./question-store.js";
+import {
+  buildCatalog,
+  compareQuestions,
+  loadContentLibrary,
+  normalizeQuestion,
+  questionSetPath,
+  subjectSlugFor,
+  validateQuestion,
+  validateQuestions,
+} from "./question-store.js";
+import { makeZip } from "./zip-utils.js";
 
 const PAGE_SIZE = 100;
-const HISTORY_KEY = "seiho-study-history-v1";
 const rows = document.querySelector("#questionRows");
 const dialog = document.querySelector("#editorDialog");
 const form = document.querySelector("#questionForm");
-const pasteDialog = document.querySelector("#pasteDialog");
-const pasteForm = document.querySelector("#pasteForm");
 const toast = document.querySelector("#toast");
+const validationPanel = document.querySelector("#validationPanel");
+const validationErrors = document.querySelector("#validationErrors");
 
+let sets = new Map();
+let catalog = null;
 let questions = [];
 let filtered = [];
 let page = 1;
 let sort = { key: "year", direction: 1 };
 let editingId = null;
+let dirtyPaths = new Set();
 
 const fields = {
   search: document.querySelector("#searchInput"),
@@ -32,7 +44,28 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2400);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+function clearErrors() {
+  validationPanel.hidden = true;
+  validationErrors.innerHTML = "";
+}
+
+function showErrors(errors, title = "保存できませんでした") {
+  document.querySelector("#validationTitle").textContent = `${title}（${errors.length}件）`;
+  validationErrors.innerHTML = errors.slice(0, 200).map((error) => {
+    const position = error.index >= 0 ? `${error.index + 1}件目` : "全体";
+    return `<li><b>${escapeHTML(position)}${error.id ? ` / ${error.id}` : ""}</b><code>${escapeHTML(error.field)}</code>${escapeHTML(error.message)}</li>`;
+  }).join("");
+  validationPanel.hidden = false;
+  validationPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function rebuildQuestionIndex() {
+  questions = [...sets.values()].flatMap((set) => set.questions).sort(compareQuestions);
+  catalog = buildCatalog(sets);
+  document.querySelector("#dirtyCount").textContent = dirtyPaths.size ? `${dirtyPaths.size}ファイルに未出力の変更` : "未出力の変更なし";
 }
 
 function valuesFor(key) {
@@ -76,8 +109,7 @@ function applyFilters() {
     if (typeof left === "number" && typeof right === "number") return (left - right) * sort.direction;
     return String(left).localeCompare(String(right), "ja") * sort.direction;
   });
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  page = Math.min(page, pageCount);
+  page = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
   renderRows();
 }
 
@@ -90,14 +122,9 @@ function renderRows() {
   document.querySelector("#nextPage").disabled = page >= pageCount;
   rows.innerHTML = visible.map((question) => `
     <tr>
-      <td>${escapeHTML(question.id)}</td>
-      <td>${escapeHTML(question.subject)}</td>
-      <td>${question.year}</td>
-      <td>${escapeHTML(question.form)}</td>
-      <td>${question.questionNumber}</td>
-      <td>${escapeHTML(question.category)}</td>
-      <td>${escapeHTML(question.questionType)}</td>
-      <td>${escapeHTML(question.difficulty)}</td>
+      <td>${escapeHTML(question.id)}</td><td>${escapeHTML(question.subject)}</td><td>${question.year}</td>
+      <td>${escapeHTML(question.form)}</td><td>${question.questionNumber}</td><td>${escapeHTML(question.category)}</td>
+      <td>${escapeHTML(question.questionType)}</td><td>${escapeHTML(question.difficulty)}</td>
       <td><span class="${question.explanation ? "yes" : "no"}">${question.explanation ? "登録済" : "未登録"}</span></td>
       <td><span class="${question.evidence?.quote ? "yes" : "no"}">${question.evidence?.quote ? "登録済" : "未登録"}</span></td>
       <td><button class="edit-button" data-edit-id="${escapeHTML(question.id)}">編集</button></td>
@@ -105,7 +132,11 @@ function renderRows() {
 }
 
 async function reload() {
-  questions = await loadQuestions();
+  const library = await loadContentLibrary();
+  sets = new Map([...library.sets].map(([path, set]) => [path, { ...set, questions: set.questions.map(normalizeQuestion) }]));
+  dirtyPaths.clear();
+  clearErrors();
+  rebuildQuestionIndex();
   refreshFilterOptions();
   updateSummary();
   applyFilters();
@@ -116,7 +147,7 @@ function choicesToText(choices) {
 }
 
 function parseChoices(value) {
-  return value.split(/\r?\n/).map((line) => {
+  return String(value).split(/\r?\n/).map((line) => {
     const separator = line.includes("｜") ? "｜" : line.includes("|") ? "|" : ",";
     const [label, ...parts] = line.split(separator);
     return { label: label.trim(), text: parts.join(separator).trim() };
@@ -151,50 +182,89 @@ function openEditor(question = null) {
 function formQuestion() {
   const data = new FormData(form);
   return {
-    id: data.get("id"),
-    subject: data.get("subject"),
-    year: Number(data.get("year")),
-    form: data.get("form"),
-    questionNumber: Number(data.get("questionNumber")),
-    questionType: data.get("questionType"),
-    category: data.get("category"),
+    id: data.get("id"), subject: data.get("subject"), year: Number(data.get("year")),
+    form: data.get("form"), questionNumber: Number(data.get("questionNumber")),
+    questionType: data.get("questionType"), category: data.get("category"),
     difficulty: data.get("difficulty"),
-    tags: data.get("tags").split(/[、,]/).map((value) => value.trim()).filter(Boolean),
-    question: data.get("question"),
-    choices: parseChoices(data.get("choices")),
-    answer: data.get("answer"),
-    answerText: data.get("answerText"),
-    explanation: data.get("explanation"),
-    keyPoint: data.get("keyPoint"),
+    tags: String(data.get("tags")).split(/[、,]/).map((value) => value.trim()).filter(Boolean),
+    question: data.get("question"), choices: parseChoices(data.get("choices")),
+    answer: data.get("answer"), answerText: data.get("answerText"),
+    explanation: data.get("explanation"), keyPoint: data.get("keyPoint"),
     commonMistake: data.get("commonMistake"),
     evidence: {
-      textbook: data.get("textbook"),
-      chapter: data.get("chapter"),
-      section: data.get("section"),
-      page: data.get("page"),
-      quote: data.get("quote"),
+      textbook: data.get("textbook"), chapter: data.get("chapter"), section: data.get("section"),
+      page: data.get("page"), quote: data.get("quote"),
     },
   };
 }
 
-function downloadJSON(payload, filename) {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
+function locationForId(id) {
+  for (const [path, set] of sets) {
+    const index = set.questions.findIndex((question) => question.id === id);
+    if (index >= 0) return { path, set, index };
+  }
+  return null;
+}
+
+function stageQuestions(records, suppliedSlug = "") {
+  const checked = validateQuestions(records);
+  const errors = [...checked.errors];
+  checked.questions.forEach((question, index) => {
+    const slug = subjectSlugFor(question.subject, suppliedSlug);
+    if (!slug) errors.push({
+      index, id: question.id, field: "subjectSlug",
+      message: `科目「${question.subject}」の subjectSlug をJSONのルートに指定してください`,
+    });
+    const existing = locationForId(question.id);
+    if (existing) {
+      const sameSet = existing.set.subject === question.subject && existing.set.year === question.year && existing.set.form === question.form;
+      if (!sameSet && records.filter((item) => item.id === question.id).length > 1) {
+        errors.push({ index, id: question.id, field: "id", message: "同じidを複数の年度・フォームへ登録できません" });
+      }
+    }
+  });
+  if (errors.length) return { saved: [], errors };
+
+  const now = new Date().toISOString();
+  checked.questions.forEach((question) => {
+    const previous = locationForId(question.id);
+    if (previous) {
+      previous.set.questions.splice(previous.index, 1);
+      previous.set.updatedAt = now;
+      dirtyPaths.add(previous.path);
+    }
+    const subjectSlug = subjectSlugFor(question.subject, suppliedSlug);
+    const path = questionSetPath(subjectSlug, question.year, question.form);
+    if (!sets.has(path)) {
+      sets.set(path, {
+        version: 1, subject: question.subject, subjectSlug, year: question.year,
+        form: question.form, updatedAt: now, questions: [],
+      });
+    }
+    const target = sets.get(path);
+    target.subject = question.subject;
+    target.subjectSlug = subjectSlug;
+    target.year = question.year;
+    target.form = question.form;
+    target.updatedAt = now;
+    target.questions.push(question);
+    target.questions.sort(compareQuestions);
+    dirtyPaths.add(path);
+  });
+  for (const [path, set] of [...sets]) if (!set.questions.length) sets.delete(path);
+  clearErrors();
+  rebuildQuestionIndex();
+  refreshFilterOptions();
+  updateSummary();
+  applyFilters();
+  return { saved: checked.questions, errors: [] };
 }
 
 function parseCSV(source) {
   const table = [];
-  let row = [];
-  let cell = "";
-  let quoted = false;
+  let row = [], cell = "", quoted = false;
   for (let index = 0; index < source.length; index += 1) {
-    const character = source[index];
-    const next = source[index + 1];
+    const character = source[index], next = source[index + 1];
     if (character === '"' && quoted && next === '"') { cell += '"'; index += 1; }
     else if (character === '"') quoted = !quoted;
     else if (character === "," && !quoted) { row.push(cell); cell = ""; }
@@ -204,7 +274,7 @@ function parseCSV(source) {
     } else cell += character;
   }
   if (cell || row.length) { row.push(cell); table.push(row); }
-  const headers = table.shift().map((header) => header.trim());
+  const headers = table.shift()?.map((header) => header.trim()) || [];
   return table.filter((values) => values.some(Boolean)).map((values) => {
     const item = Object.fromEntries(headers.map((header, index) => [header, values[index] || ""]));
     let choices = [];
@@ -212,16 +282,10 @@ function parseCSV(source) {
     let tags = [];
     try { tags = JSON.parse(item.tags); } catch { tags = String(item.tags || "").split(/[、;|]/).filter(Boolean); }
     return {
-      ...item,
-      year: Number(item.year),
-      questionNumber: Number(item.questionNumber),
-      choices,
-      tags,
+      ...item, year: Number(item.year), questionNumber: Number(item.questionNumber), choices, tags,
       evidence: {
-        textbook: item.textbook || item["evidence.textbook"],
-        chapter: item.chapter || item["evidence.chapter"],
-        section: item.section || item["evidence.section"],
-        page: item.page || item["evidence.page"],
+        textbook: item.textbook || item["evidence.textbook"], chapter: item.chapter || item["evidence.chapter"],
+        section: item.section || item["evidence.section"], page: item.page || item["evidence.page"],
         quote: item.quote || item["evidence.quote"],
       },
     };
@@ -232,26 +296,52 @@ async function importFile(file, type) {
   try {
     const source = await file.text();
     const parsed = type === "json" ? JSON.parse(source) : parseCSV(source);
-    await importPayload(parsed);
+    const records = Array.isArray(parsed) ? parsed : parsed?.questions;
+    const suppliedSlug = Array.isArray(parsed) ? "" : parsed?.subjectSlug;
+    const result = stageQuestions(records, suppliedSlug);
+    if (result.errors.length) {
+      showErrors(result.errors, "インポートを中止しました");
+      showToast("JSONにエラーがあります。変更は反映していません");
+      return;
+    }
+    showToast(`${result.saved.length}問を作業データへ追加・更新しました。ZIPを出力してください`);
   } catch (error) {
-    showToast(error.message || "インポートに失敗しました");
+    showErrors([{ index: -1, id: "", field: "JSON", message: error.message || "読み込みに失敗しました" }], "インポートを中止しました");
+  } finally {
+    document.querySelector(type === "json" ? "#jsonInput" : "#csvInput").value = "";
   }
 }
 
-async function importPayload(parsed) {
-  const records = Array.isArray(parsed) ? parsed : parsed?.questions;
-  if (!Array.isArray(records)) throw new Error("問題配列または questions を含むJSONを指定してください");
-  const saved = await saveQuestions(records);
-  await reload();
-  showToast(`${saved.length}問を追加・更新しました`);
-  return saved;
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadJSON(payload, filename) {
+  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), filename);
+}
+
+function dataFiles() {
+  const now = new Date().toISOString();
+  const currentCatalog = buildCatalog(sets, now);
+  const files = [{ path: "data/catalog.json", content: JSON.stringify(currentCatalog, null, 2) }];
+  for (const [path, set] of [...sets].sort(([a], [b]) => a.localeCompare(b))) {
+    files.push({
+      path,
+      content: JSON.stringify({ ...set, questions: [...set.questions].sort(compareQuestions) }, null, 2),
+    });
+  }
+  return files;
 }
 
 Object.values(fields).forEach((field) => field.addEventListener("input", () => { page = 1; applyFilters(); }));
 document.querySelector("#clearFilters").addEventListener("click", () => {
   Object.values(fields).forEach((field) => { field.value = ""; });
-  page = 1;
-  applyFilters();
+  page = 1; applyFilters();
 });
 document.querySelectorAll("th[data-sort]").forEach((header) => header.addEventListener("click", () => {
   const key = header.dataset.sort;
@@ -263,58 +353,56 @@ document.querySelector("#nextPage").addEventListener("click", () => { page += 1;
 document.querySelector("#addButton").addEventListener("click", () => openEditor());
 document.querySelector("#closeEditor").addEventListener("click", () => dialog.close());
 document.querySelector("#cancelEditor").addEventListener("click", () => dialog.close());
-document.querySelector("#deleteQuestion").addEventListener("click", async () => {
-  if (!editingId || !confirm(`${editingId} の管理者追加・編集データを削除しますか？`)) return;
-  await deleteQuestionOverride(editingId);
+document.querySelector("#closeValidation").addEventListener("click", clearErrors);
+document.querySelector("#deleteQuestion").addEventListener("click", () => {
+  if (!editingId || !confirm(`${editingId} を問題JSONから削除しますか？`)) return;
+  const located = locationForId(editingId);
+  if (!located) return;
+  located.set.questions.splice(located.index, 1);
+  located.set.updatedAt = new Date().toISOString();
+  dirtyPaths.add(located.path);
+  if (!located.set.questions.length) sets.delete(located.path);
   dialog.close();
-  await reload();
-  showToast("管理者追加・編集データを削除しました");
+  rebuildQuestionIndex(); refreshFilterOptions(); updateSummary(); applyFilters();
+  showToast("作業データから削除しました。ZIPを出力してdataフォルダへ配置してください");
 });
 rows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-edit-id]");
-  if (!button) return;
-  openEditor(questions.find((question) => question.id === button.dataset.editId));
+  if (button) openEditor(questions.find((question) => question.id === button.dataset.editId));
 });
-form.addEventListener("submit", async (event) => {
+form.addEventListener("submit", (event) => {
   event.preventDefault();
-  try {
-    await saveQuestion(formQuestion());
+  const candidate = formQuestion();
+  const checked = validateQuestion(candidate);
+  const duplicate = !editingId && locationForId(checked.question.id);
+  if (duplicate) checked.errors.push({ index: 0, id: checked.question.id, field: "id", message: "このidはすでに登録されています" });
+  if (checked.errors.length) {
     dialog.close();
-    await reload();
-    showToast("問題データを保存しました");
-  } catch (error) {
-    showToast(error.message);
+    showErrors(checked.errors, "問題を保存できません");
+    return;
   }
+  const result = stageQuestions([candidate]);
+  if (result.errors.length) {
+    dialog.close();
+    showErrors(result.errors, "問題を保存できません");
+    return;
+  }
+  dialog.close();
+  showToast("作業データへ保存しました。ZIPを出力してください");
 });
 document.querySelector("#jsonInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "json"));
 document.querySelector("#csvInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "csv"));
-document.querySelector("#pasteJsonButton").addEventListener("click", () => {
-  document.querySelector("#pasteJsonText").value = "";
-  pasteDialog.showModal();
+document.querySelector("#exportButton").addEventListener("click", () => {
+  downloadJSON(buildCatalog(sets), "catalog.json");
+  showToast("catalog.json を出力しました");
 });
-document.querySelector("#closePaste").addEventListener("click", () => pasteDialog.close());
-document.querySelector("#cancelPaste").addEventListener("click", () => pasteDialog.close());
-pasteForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  try {
-    await importPayload(JSON.parse(document.querySelector("#pasteJsonText").value));
-    pasteDialog.close();
-  } catch (error) {
-    showToast(error.message || "JSONを取り込めませんでした");
-  }
-});
-document.querySelector("#exportButton").addEventListener("click", async () => {
-  downloadJSON(await exportQuestions(), `seiho-questions-${new Date().toISOString().slice(0, 10)}.json`);
-});
-document.querySelector("#backupButton").addEventListener("click", async () => {
-  let history = {};
-  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; } catch {}
-  downloadJSON({
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    questions: await exportQuestions(),
-    history,
-  }, `seiho-full-backup-${new Date().toISOString().slice(0, 10)}.json`);
+document.querySelector("#backupButton").addEventListener("click", () => {
+  downloadBlob(makeZip(dataFiles()), `seiho-data-${new Date().toISOString().slice(0, 10)}.zip`);
+  showToast("dataフォルダ一式をZIPで出力しました");
 });
 
-await reload();
+try {
+  await reload();
+} catch (error) {
+  showErrors([{ index: -1, id: "", field: "起動", message: error.message }], "問題データを読み込めません");
+}

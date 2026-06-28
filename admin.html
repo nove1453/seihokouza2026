@@ -11,15 +11,16 @@
   <header class="admin-topbar">
     <div class="admin-brand"><span>S</span><div><b>Seiho Study</b><small>CONTENT ADMIN</small></div></div>
     <div class="top-actions">
-      <button class="button ghost" id="exportButton">JSONエクスポート</button>
-      <button class="button ghost" id="backupButton">全データバックアップ</button>
+      <a class="button ghost" href="./">学習画面へ</a>
+      <button class="button ghost" id="exportButton">catalog.json</button>
+      <button class="button primary" id="backupButton">data一式をZIP出力</button>
       <button class="button primary" id="addButton">＋ 新規問題</button>
     </div>
   </header>
 
   <main>
     <section class="summary-row">
-      <div><p class="eyebrow">QUESTION DATABASE</p><h1>問題コンテンツ管理</h1><p class="muted">問題・解説・引用を、アプリ本体から独立して管理します。</p></div>
+      <div><p class="eyebrow">QUESTION DATABASE</p><h1>問題コンテンツ管理</h1><p class="muted">dataフォルダのJSONを正本として、問題・解説・引用を管理します。</p><span class="change-state" id="dirtyCount">未出力の変更なし</span></div>
       <div class="summary-cards">
         <article><small>登録問題</small><b id="totalCount">0</b></article>
         <article><small>解説登録</small><b id="explainedCount">0</b></article>
@@ -27,13 +28,27 @@
       </div>
     </section>
 
+    <section class="static-guide">
+      <b>静的アプリでの保存方法</b>
+      <ol>
+        <li>JSONを読み込む、または問題を編集します。</li>
+        <li>「data一式をZIP出力」を押します。</li>
+        <li>ZIP内の <code>data</code> フォルダを、このアプリの <code>data</code> フォルダへ上書き配置します。</li>
+      </ol>
+      <p>ブラウザからGitHubやローカルファイルへ直接書き込めないため、編集内容はZIPを配置した時点で正式反映されます。学習履歴は別にlocalStorageへ残ります。</p>
+    </section>
+
     <section class="import-panel">
-      <div><b>一括インポート</b><p>JSONまたはCSVを読み込むと、IDが同じ問題は更新、新しいIDは追加されます。</p></div>
+      <div><b>一括インポート</b><p>科目・年度・フォームを自動判定し、保存先とcatalogを生成します。エラーが1件でもあれば全件を取り込みません。</p></div>
       <div class="import-actions">
         <label class="button secondary">JSONを読み込む<input type="file" id="jsonInput" accept=".json,application/json"></label>
         <label class="button secondary">CSVを読み込む<input type="file" id="csvInput" accept=".csv,text/csv"></label>
-        <button class="button ghost" id="pasteJsonButton">JSONを貼り付け</button>
       </div>
+    </section>
+
+    <section class="validation-panel" id="validationPanel" hidden>
+      <div class="validation-head"><div><b id="validationTitle">保存できませんでした</b><p>該当箇所を直してから、もう一度読み込んでください。</p></div><button class="close-button" id="closeValidation" type="button" aria-label="閉じる">×</button></div>
+      <ol id="validationErrors"></ol>
     </section>
 
     <section class="workspace">
@@ -123,21 +138,6 @@
         <span class="action-spacer"></span>
         <button type="button" class="button ghost" id="cancelEditor">キャンセル</button>
         <button type="submit" class="button primary">保存する</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="pasteDialog">
-    <form id="pasteForm" class="paste-editor">
-      <div class="editor-head">
-        <div><p class="eyebrow">PASTE JSON</p><h2>JSONを貼り付けて取り込む</h2></div>
-        <button type="button" class="close-button" id="closePaste" aria-label="閉じる">×</button>
-      </div>
-      <p class="muted">JSONファイルの内容をそのまま貼り付けてください。ファイル選択と同じ検証・登録処理を実行します。</p>
-      <textarea id="pasteJsonText" rows="16" placeholder='[{"id":"2023-A-001", ...}]'></textarea>
-      <div class="editor-actions">
-        <button type="button" class="button ghost" id="cancelPaste">キャンセル</button>
-        <button type="submit" class="button primary">JSONを取り込む</button>
       </div>
     </form>
   </dialog>

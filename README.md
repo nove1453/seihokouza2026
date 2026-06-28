@@ -1,6 +1,6 @@
 # Seiho Study
 
-保険講座の試験対策Webアプリです。問題コンテンツはUIから分離され、科目・年度・フォームを追加できます。
+生命保険講座の試験対策Webアプリです。問題コンテンツと学習履歴を分離しています。
 
 ## 起動
 
@@ -8,26 +8,49 @@
 python3 -m http.server 4173
 ```
 
-ブラウザで `http://localhost:4173` を開きます。
+- 学習画面: `http://127.0.0.1:4173/`
+- 管理画面: `http://127.0.0.1:4173/admin.html`
 
 ## データ構成
 
-- `data/questions.json`: 問題・選択肢・正解・解説・テキスト根拠
-- `data/catalog.json`: 配布する問題パックの一覧
-- `question-store.js`: 基礎パックと管理者追加データをIDで統合するデータ層
-- `app.js`: 画面、学習モード、履歴・復習ロジック
-- `styles.css`: レスポンシブUI
+問題データの正本は次の2種類です。
 
-学習履歴はブラウザの `localStorage` に保存され、画面右上のメニューからJSONのエクスポート・インポートができます。
+- `data/catalog.json`: 読み込む科目・年度・フォーム・JSONパスの一覧
+- `data/questions/{subjectSlug}/{year}/{form}.json`: 問題・解説・引用
 
-## 管理者モード
+学習履歴、正答率、復習状態、ブックマーク、画面の選択状態だけをブラウザの `localStorage` に保存します。問題本文はlocalStorageやIndexedDBへ保存しません。
 
-一般画面右上の「•••」を開き、「管理者モードを開く」を選択します。次の専用URLから直接開くこともできます。
+現在の科目slug:
 
-`http://localhost:4173/admin.html`
+- 生命保険総論: `seiho-souron`
+- 生命保険経理: `seiho-keiri`
+- 危険選択: `kiken-sentaku`
+- 生命保険計理: `seiho-keiri-math`
+- 約款と法律: `yakkan-houritsu`
 
-管理画面からJSON/CSVの一括登録、問題・解説・引用の編集、新規問題追加、全問題エクスポート、学習履歴を含むバックアップができます。管理者が追加・編集した問題はIndexedDBに保存され、問題IDが同じ場合は内容だけが更新されます。
+## 管理画面
 
-静的配布する問題パックを追加する場合は、JSONファイルを `data/` に置き、`data/catalog.json` にパスを追加します。アプリ本体の変更は不要です。
+静的Webアプリはブラウザからローカル/GitHub上のファイルへ直接書き込めません。そのため管理画面では次の手順で更新します。
 
-インポート形式は `data/import-template.json` と `data/import-template.csv` を参照してください。
+1. JSON/CSVをインポート、または問題を追加・編集・削除する
+2. 厳格バリデーションを通す
+3. 「data一式をZIP出力」を押す
+4. ZIP内の `data` フォルダをプロジェクトへ上書き配置する
+
+ZIPには各問題セットと、自動更新された `data/catalog.json` が含まれます。既存問題のIDは編集できないため、配置後も学習履歴との紐付けが保たれます。
+
+## JSONセット形式
+
+```json
+{
+  "version": 1,
+  "subject": "生命保険総論",
+  "subjectSlug": "seiho-souron",
+  "year": 2024,
+  "form": "B",
+  "updatedAt": "2026-06-28T00:00:00.000Z",
+  "questions": []
+}
+```
+
+アプリは起動時に `data/catalog.json` を読み込み、そこに記載された全JSONを取得します。科目・年度・フォームはコードへハードコーディングしていません。
