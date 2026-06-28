@@ -145,6 +145,7 @@ h3 { font-size: 15px; }
 .submit-zone .primary-button { min-width: 180px; }
 .submit-zone .primary-button:disabled { opacity: .38; cursor: not-allowed; }
 
+.answer-explanation { scroll-margin-top: 92px; }
 .result-banner { border-radius: 18px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
 .result-banner.correct { background: var(--mint); color: var(--green); }
 .result-banner.incorrect { background: var(--red-soft); color: var(--red); }
@@ -162,8 +163,16 @@ h3 { font-size: 15px; }
 .explain-section p { margin: 0; line-height: 1.85; white-space: pre-wrap; }
 .evidence { background: #f0efe9; border-radius: 16px; padding: 18px; }
 .evidence-grid { display: grid; grid-template-columns: 1fr auto; gap: 14px; }
+.evidence-quote { margin-top: 15px !important; }
 .page-badge { min-width: 67px; height: 67px; display: grid; place-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; text-align: center; font-weight: 800; }
 .page-badge small { display: block; color: var(--muted); font-size: 9px; }
+.pdf-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.pdf-actions span { color: var(--muted); font-size: 10px; }
+.pdf-toggle { min-height: 42px; }
+.pdf-unavailable { display: inline-flex; padding: 8px 11px; border-radius: 9px; background: #e2e1db; color: var(--muted); font-weight: 750; }
+.pdf-error { margin: 12px 0 0 !important; padding: 10px 12px; border-radius: 10px; background: var(--red-soft); color: var(--red); font-size: 11px; }
+.pdf-viewer { width: 100%; height: min(72vh, 760px); min-height: 520px; margin-top: 16px; overflow: auto; border: 1px solid #c8c9c3; border-radius: 14px; background: #d5d7d5; scroll-margin-top: 92px; }
+.pdf-viewer iframe { display: block; width: 100%; height: 100%; border: 0; background: white; }
 .practice-actions { position: sticky; bottom: 82px; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; padding: 12px; margin: 14px -12px 0; background: rgba(246,244,238,.9); backdrop-filter: blur(15px); border-radius: 18px; }
 
 .category-full-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
@@ -203,6 +212,8 @@ dialog::backdrop { background: rgba(17,38,34,.45); backdrop-filter: blur(3px); }
   .category-snapshot, .category-full-grid { grid-template-columns: 1fr 1fr; }
   .mode-grid { grid-template-columns: 1fr 1fr; }
   .practice-actions { bottom: 88px; }
+  .answer-explanation, .pdf-viewer { scroll-margin-top: 125px; }
+  .pdf-viewer { height: 62vh; min-height: 430px; }
 }
 
 @media (max-width: 480px) {

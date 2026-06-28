@@ -7,7 +7,7 @@ import {
   subjectSlugFor,
   validateQuestion,
   validateQuestions,
-} from "./question-store.js";
+} from "./question-store.js?v=20260628-3";
 import { makeZip } from "./zip-utils.js";
 
 const PAGE_SIZE = 100;
@@ -54,10 +54,11 @@ function showToast(message) {
 
 function clearErrors() {
   validationPanel.hidden = true;
+  validationPanel.classList.remove("warning");
   validationErrors.innerHTML = "";
 }
 
-function showImportResult({ added = 0, updated = 0, deleted = 0, total = questions.length, paths = [] }) {
+function showImportResult({ added = 0, updated = 0, deleted = 0, total = questions.length, paths = [], warnings = [] }) {
   const actions = [
     added ? `${added}問追加` : "",
     updated ? `${updated}問更新` : "",
@@ -68,7 +69,8 @@ function showImportResult({ added = 0, updated = 0, deleted = 0, total = questio
     ? "すべて既存IDの更新なので、登録問題の総数は変わりません。"
     : "";
   document.querySelector("#importResultText").textContent =
-    `登録問題は合計${total.toLocaleString()}問です。${unchanged} 対象：${paths.join("、") || "なし"}`;
+    `登録問題は合計${total.toLocaleString()}問です。${unchanged}` +
+    `${warnings.length ? ` PDF情報の注意が${warnings.length}件あります。` : ""} 対象：${paths.join("、") || "なし"}`;
   importResult.hidden = false;
 }
 
@@ -80,6 +82,7 @@ function clearPreparedDownloads() {
 }
 
 function showErrors(errors, title = "保存できませんでした") {
+  validationPanel.classList.remove("warning");
   document.querySelector("#validationTitle").textContent = `${title}（${errors.length}件）`;
   validationErrors.innerHTML = errors.slice(0, 200).map((error) => {
     const position = error.index >= 0 ? `${error.index + 1}件目` : "全体";
@@ -89,9 +92,19 @@ function showErrors(errors, title = "保存できませんでした") {
   validationPanel.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function showWarnings(warnings) {
+  validationPanel.classList.add("warning");
+  document.querySelector("#validationTitle").textContent = `保存しましたがPDF情報に注意があります（${warnings.length}件）`;
+  validationErrors.innerHTML = warnings.slice(0, 200).map((warning) => {
+    const position = warning.index >= 0 ? `${warning.index + 1}件目` : "全体";
+    return `<li><b>${escapeHTML(position)}${warning.id ? ` / ${warning.id}` : ""}</b><code>${escapeHTML(warning.field)}</code>${escapeHTML(warning.message)}</li>`;
+  }).join("");
+  validationPanel.hidden = false;
+}
+
 function rebuildQuestionIndex() {
   questions = [...sets.values()].flatMap((set) => set.questions).sort(compareQuestions);
-  catalog = buildCatalog(sets);
+  catalog = buildCatalog(sets, new Date().toISOString(), catalog);
   document.querySelector("#dirtyCount").textContent = dirtyPaths.size ? `${dirtyPaths.size}ファイルに未出力の変更` : "未出力の変更なし";
 }
 
@@ -161,6 +174,7 @@ function renderRows() {
 async function reload() {
   const library = await loadContentLibrary();
   sets = new Map([...library.sets].map(([path, set]) => [path, { ...set, questions: set.questions.map(normalizeQuestion) }]));
+  catalog = library.catalog;
   dirtyPaths.clear();
   clearPreparedDownloads();
   importResult.hidden = true;
@@ -191,13 +205,16 @@ function openEditor(question = null) {
     id: "", subject: "", year: new Date().getFullYear(), form: "A", questionNumber: "",
     questionType: "", category: "", difficulty: "標準", tags: [], question: "",
     choices: [], answer: "", answerText: "", explanation: "", keyPoint: "", commonMistake: "",
-    evidence: { textbook: "", chapter: "", section: "", page: "", quote: "" },
+    evidence: { textbook: "", textbookId: "", pdfPath: "", pdfPage: "", chapter: "", section: "", page: "", quote: "" },
   };
   const assign = (name, fieldValue) => { form.elements[name].value = fieldValue ?? ""; };
   ["id", "subject", "year", "form", "questionNumber", "questionType", "category", "difficulty", "question", "answer", "answerText", "explanation", "keyPoint", "commonMistake"].forEach((name) => assign(name, value[name]));
   assign("tags", value.tags?.join(", "));
   assign("choices", choicesToText(value.choices || []));
   assign("textbook", value.evidence?.textbook);
+  assign("textbookId", value.evidence?.textbookId);
+  assign("pdfPath", value.evidence?.pdfPath);
+  assign("pdfPage", value.evidence?.pdfPage);
   assign("chapter", value.evidence?.chapter);
   assign("section", value.evidence?.section);
   assign("page", value.evidence?.page);
@@ -221,7 +238,9 @@ function formQuestion() {
     explanation: data.get("explanation"), keyPoint: data.get("keyPoint"),
     commonMistake: data.get("commonMistake"),
     evidence: {
-      textbook: data.get("textbook"), chapter: data.get("chapter"), section: data.get("section"),
+      textbook: data.get("textbook"), textbookId: data.get("textbookId"),
+      pdfPath: data.get("pdfPath"), pdfPage: Number(data.get("pdfPage")) || null,
+      chapter: data.get("chapter"), section: data.get("section"),
       page: data.get("page"), quote: data.get("quote"),
     },
   };
@@ -238,6 +257,21 @@ function locationForId(id) {
 function stageQuestions(records, suppliedSlug = "") {
   const checked = validateQuestions(records);
   const errors = [...checked.errors];
+  checked.questions.forEach((question) => {
+    const existing = locationForId(question.id)?.set.questions.find((item) => item.id === question.id);
+    const catalogTextbook = catalog?.subjects?.find((subject) => subject.subject === question.subject)?.textbook || {};
+    question.evidence.textbook ||= existing?.evidence.textbook || catalogTextbook.title;
+    question.evidence.textbookId ||= existing?.evidence.textbookId || catalogTextbook.textbookId;
+    question.evidence.pdfPath ||= existing?.evidence.pdfPath || catalogTextbook.pdfPath;
+    question.evidence.pdfPage ||= existing?.evidence.pdfPage;
+  });
+  const warnings = checked.warnings.filter((warning) => {
+    const evidence = checked.questions[warning.index]?.evidence || {};
+    if (warning.field === "evidence.textbookId") return !evidence.textbookId;
+    if (warning.field === "evidence.pdfPath") return !evidence.pdfPath;
+    if (warning.field === "evidence.pdfPage") return !evidence.pdfPage;
+    return true;
+  });
   checked.questions.forEach((question, index) => {
     const slug = subjectSlugFor(question.subject, suppliedSlug);
     if (!slug) errors.push({
@@ -252,7 +286,7 @@ function stageQuestions(records, suppliedSlug = "") {
       }
     }
   });
-  if (errors.length) return { saved: [], errors };
+  if (errors.length) return { saved: [], errors, warnings };
 
   const existingIds = new Set(checked.questions.filter((question) => locationForId(question.id)).map((question) => question.id));
   const now = new Date().toISOString();
@@ -277,6 +311,13 @@ function stageQuestions(records, suppliedSlug = "") {
     target.year = question.year;
     target.form = question.form;
     target.updatedAt = now;
+    if (question.evidence.textbookId || question.evidence.pdfPath) {
+      target.textbook = {
+        textbookId: question.evidence.textbookId,
+        title: question.evidence.textbook,
+        pdfPath: question.evidence.pdfPath,
+      };
+    }
     target.questions.push(question);
     target.questions.sort(compareQuestions);
     dirtyPaths.add(path);
@@ -296,6 +337,7 @@ function stageQuestions(records, suppliedSlug = "") {
       questionSetPath(subjectSlugFor(question.subject, suppliedSlug), question.year, question.form)
     ))],
     errors: [],
+    warnings,
   };
 }
 
@@ -323,7 +365,11 @@ function parseCSV(source) {
     return {
       ...item, year: Number(item.year), questionNumber: Number(item.questionNumber), choices, tags,
       evidence: {
-        textbook: item.textbook || item["evidence.textbook"], chapter: item.chapter || item["evidence.chapter"],
+        textbook: item.textbook || item["evidence.textbook"],
+        textbookId: item.textbookId || item["evidence.textbookId"],
+        pdfPath: item.pdfPath || item["evidence.pdfPath"],
+        pdfPage: Number(item.pdfPage || item["evidence.pdfPage"]) || null,
+        chapter: item.chapter || item["evidence.chapter"],
         section: item.section || item["evidence.section"], page: item.page || item["evidence.page"],
         quote: item.quote || item["evidence.quote"],
       },
@@ -344,6 +390,7 @@ async function importFile(file, type) {
       return;
     }
     showImportResult({ ...result, total: questions.length });
+    if (result.warnings.length) showWarnings(result.warnings);
     showToast(`${result.added}問追加・${result.updated}問更新しました。出力ファイルを準備してください`);
   } catch (error) {
     showErrors([{ index: -1, id: "", field: "JSON", message: error.message || "読み込みに失敗しました" }], "インポートを中止しました");
@@ -367,9 +414,9 @@ function jsonBlob(payload) {
   return new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
 }
 
-function dataFiles() {
+function jsonDataFiles() {
   const now = new Date().toISOString();
-  const currentCatalog = buildCatalog(sets, now);
+  const currentCatalog = buildCatalog(sets, now, catalog);
   const files = [{ path: "data/catalog.json", content: JSON.stringify(currentCatalog, null, 2) }];
   for (const [path, set] of [...sets].sort(([a], [b]) => a.localeCompare(b))) {
     files.push({
@@ -380,9 +427,24 @@ function dataFiles() {
   return files;
 }
 
-function prepareDownloads(catalogOnly = false) {
+async function dataFiles(includeTextbooks = false) {
+  const files = jsonDataFiles();
+  if (!includeTextbooks) return files;
+  const currentCatalog = JSON.parse(files[0].content);
+  const pdfPaths = [...new Set((currentCatalog.subjects || [])
+    .map((subject) => subject.textbook?.pdfPath)
+    .filter(Boolean))];
+  for (const path of pdfPaths) {
+    const response = await fetch(path, { cache: "no-store" });
+    if (!response.ok) continue;
+    files.push({ path, bytes: new Uint8Array(await response.arrayBuffer()) });
+  }
+  return files;
+}
+
+async function prepareDownloads(catalogOnly = false) {
   clearPreparedDownloads();
-  const files = dataFiles();
+  const files = await dataFiles(!catalogOnly);
   if (!catalogOnly) {
     downloadLinks.append(makeDownloadLink(
       makeZip(files),
@@ -390,13 +452,15 @@ function prepareDownloads(catalogOnly = false) {
       "data一式のZIPをダウンロード"
     ));
   }
-  const visibleFiles = catalogOnly
-    ? files.filter((file) => file.path === "data/catalog.json" || dirtyPaths.has(file.path))
-    : files.filter((file) => file.path === "data/catalog.json" || dirtyPaths.has(file.path));
+  const visibleFiles = files.filter((file) =>
+    file.path === "data/catalog.json" || dirtyPaths.has(file.path) || file.bytes
+  );
   visibleFiles.forEach((file) => {
     const filename = file.path === "data/catalog.json" ? "catalog.json" : file.path.split("/").at(-1);
     downloadLinks.append(makeDownloadLink(
-      new Blob([file.content], { type: "application/json" }),
+      file.bytes
+        ? new Blob([file.bytes], { type: "application/pdf" })
+        : new Blob([file.content], { type: "application/json" }),
       filename,
       file.path,
       true
@@ -434,7 +498,7 @@ async function saveDirectlyToData() {
     const response = await fetch("./api/admin/save-content", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ files: dataFiles() }),
+      body: JSON.stringify({ files: await dataFiles(false) }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "dataフォルダへ保存できませんでした");
@@ -507,15 +571,18 @@ form.addEventListener("submit", (event) => {
   }
   dialog.close();
   showImportResult({ ...result, total: questions.length });
+  if (result.warnings.length) showWarnings(result.warnings);
   showToast("作業データへ保存しました。出力ファイルを準備してください");
 });
 document.querySelector("#jsonInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "json"));
 document.querySelector("#csvInput").addEventListener("change", (event) => event.target.files[0] && importFile(event.target.files[0], "csv"));
-document.querySelector("#exportButton").addEventListener("click", () => {
-  prepareDownloads(true);
+document.querySelector("#exportButton").addEventListener("click", async () => {
+  try { await prepareDownloads(true); }
+  catch (error) { showErrors([{ index: -1, id: "", field: "出力", message: error.message }], "出力ファイルを準備できません"); }
 });
-document.querySelector("#backupButton").addEventListener("click", () => {
-  prepareDownloads(false);
+document.querySelector("#backupButton").addEventListener("click", async () => {
+  try { await prepareDownloads(false); }
+  catch (error) { showErrors([{ index: -1, id: "", field: "出力", message: error.message }], "出力ファイルを準備できません"); }
 });
 directSaveButton.addEventListener("click", saveDirectlyToData);
 

@@ -61,6 +61,8 @@ h2 { margin: 0; letter-spacing: -.03em; }
 .validation-panel li { margin: 7px 0; font-size: 11px; line-height: 1.5; }
 .validation-panel li b { margin-right: 8px; }
 .validation-panel li code { margin-right: 8px; padding: 2px 5px; border-radius: 4px; background: #f7d9d5; }
+.validation-panel.warning { border-color: #e0bd74; background: #fff8e8; color: #77561d; }
+.validation-panel.warning li code { background: #f4e3b8; }
 .workspace { border: 1px solid var(--line); border-radius: 17px; background: var(--card); overflow: hidden; }
 .toolbar { padding: 13px; display: grid; grid-template-columns: minmax(240px, 1.7fr) repeat(4, minmax(130px, 1fr)) 110px auto; gap: 8px; border-bottom: 1px solid var(--line); background: #fafaf7; }
 input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 9px; background: #fff; padding: 10px 11px; color: var(--ink); outline: none; }

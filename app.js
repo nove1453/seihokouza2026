@@ -1,4 +1,4 @@
-import { loadQuestions } from "./question-store.js";
+import { loadQuestions } from "./question-store.js?v=20260628-3";
 
 const STORAGE_KEY = "seiho-study-history-v1";
 const DAILY_GOAL = 20;
@@ -228,7 +228,7 @@ function startSession(mode = "all", category = null, startId = null) {
     return;
   }
   const startIndex = startId ? Math.max(0, pool.findIndex((q) => q.id === startId)) : 0;
-  session = { mode, category, questions: pool, index: startIndex, selected: null, answered: false };
+  session = { mode, category, questions: pool, index: startIndex, selected: null, answered: false, pdfOpenId: null, pdfError: null };
   setRoute("quiz");
 }
 
@@ -269,30 +269,51 @@ function renderQuiz() {
 function explanationHTML(q, selected) {
   const correct = selected === q.answer;
   const selectedText = q.choices.find((choice) => choice.label === selected)?.text || "未回答";
+  const evidence = q.evidence || {};
+  const fallbackPdfPage = Number(String(evidence.page || "").match(/\d+/)?.[0]) || null;
+  const pdfPage = Number(evidence.pdfPage) || fallbackPdfPage;
+  const pdfPath = evidence.pdfPath || "";
+  const pdfOpen = session?.pdfOpenId === q.id;
+  const pdfUrl = pdfPath && pdfPage
+    ? `${pdfPath}#page=${pdfPage}&view=FitH&toolbar=0`
+    : "";
   return `
-    <div class="result-banner ${correct ? "correct" : "incorrect"}">
-      <span class="result-icon">${correct ? "✓" : "×"}</span>
-      <div><h2>${correct ? "正解です" : "もう一歩です"}</h2><p>${correct ? "この調子で定着させましょう。" : "根拠を確認して、次は迷わない形に。"}</p></div>
-    </div>
-    <article class="explanation-card">
-      <div class="answer-summary">
-        <div class="answer-box correct"><small>正解</small><b>${q.answer}．${escapeHTML(q.answerText)}</b></div>
-        <div class="answer-box"><small>あなたの回答</small><b>${selected}．${escapeHTML(selectedText)}</b></div>
+    <div id="answerExplanation" class="answer-explanation">
+      <div class="result-banner ${correct ? "correct" : "incorrect"}">
+        <span class="result-icon">${correct ? "✓" : "×"}</span>
+        <div><h2>${correct ? "正解です" : "もう一歩です"}</h2><p>${correct ? "この調子で定着させましょう。" : "根拠を確認して、次は迷わない形に。"}</p></div>
       </div>
-      <section class="explain-section"><h3>解説</h3><p>${escapeHTML(q.explanation)}</p></section>
-      <section class="explain-section"><h3>覚えるポイント</h3><p>${escapeHTML(q.keyPoint)}</p></section>
-      <section class="explain-section"><h3>間違えやすいポイント</h3><p>${escapeHTML(q.commonMistake)}</p></section>
-      <section class="explain-section">
-        <h3>テキスト根拠</h3>
-        <div class="evidence">
-          <div class="evidence-grid">
-            <div><p class="eyebrow">${escapeHTML(q.evidence.textbook)}</p><h3>${escapeHTML(q.evidence.chapter)}</h3><p class="muted">${escapeHTML(q.evidence.section)}</p></div>
-            <div class="page-badge"><div><small>PAGE</small>${escapeHTML(String(q.evidence.page))}</div></div>
-          </div>
-          <p>${escapeHTML(q.evidence.quote || "要確認")}</p>
+      <article class="explanation-card">
+        <div class="answer-summary">
+          <div class="answer-box correct"><small>正解</small><b>${q.answer}．${escapeHTML(q.answerText)}</b></div>
+          <div class="answer-box"><small>あなたの回答</small><b>${selected}．${escapeHTML(selectedText)}</b></div>
         </div>
-      </section>
-    </article>
+        <section class="explain-section"><h3>解説</h3><p>${escapeHTML(q.explanation)}</p></section>
+        <section class="explain-section"><h3>覚えるポイント</h3><p>${escapeHTML(q.keyPoint)}</p></section>
+        <section class="explain-section"><h3>間違えやすいポイント</h3><p>${escapeHTML(q.commonMistake)}</p></section>
+        <section class="explain-section">
+          <h3>根拠テキスト</h3>
+          <div class="evidence">
+            <div class="evidence-grid">
+              <div><p class="eyebrow">${escapeHTML(evidence.textbook)}</p><h3>${escapeHTML(evidence.chapter)}</h3><p class="muted">${escapeHTML(evidence.section)}</p></div>
+              <div class="page-badge"><div><small>TEXT P.</small>${escapeHTML(String(evidence.page || "要確認"))}</div></div>
+            </div>
+            <p class="evidence-quote">${escapeHTML(evidence.quote || "要確認")}</p>
+            <div class="pdf-actions">
+              ${pdfPath && pdfPage
+                ? `<button class="secondary-button pdf-toggle" data-toggle-pdf="${escapeHTML(q.id)}">${pdfOpen ? "閉じる" : "該当ページを見る"}</button>
+                   <span>PDF ${pdfPage}ページ目</span>`
+                : `<span class="pdf-unavailable">${pdfPath ? "PDFページ未登録" : "PDF未登録"}</span>`}
+            </div>
+            ${session?.pdfError ? `<p class="pdf-error">${escapeHTML(session.pdfError)}</p>` : ""}
+            ${pdfOpen ? `
+              <div class="pdf-viewer" id="pdfViewer">
+                <iframe src="${escapeHTML(pdfUrl)}" title="${escapeHTML(evidence.textbook)} テキストP${escapeHTML(String(evidence.page))}" loading="lazy"></iframe>
+              </div>` : ""}
+          </div>
+        </section>
+      </article>
+    </div>
     <div class="practice-actions">
       <button class="secondary-button" id="bookmarkButtonBottom">${recordFor(q.id).bookmarked ? "★" : "☆"}</button>
       <button class="secondary-button" id="retryButton">もう一度</button>
@@ -321,7 +342,41 @@ function submitAnswer() {
   saveHistory();
   session.answered = true;
   renderQuiz();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  requestAnimationFrame(() => {
+    document.querySelector("#answerExplanation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+async function toggleEvidencePdf() {
+  const q = currentQuestion();
+  if (!q || !session?.answered) return;
+  if (session.pdfOpenId === q.id) {
+    session.pdfOpenId = null;
+    session.pdfError = null;
+    renderQuiz();
+    requestAnimationFrame(() => {
+      document.querySelector("#answerExplanation")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return;
+  }
+  const pdfPath = q.evidence?.pdfPath;
+  const fallbackPdfPage = Number(String(q.evidence?.page || "").match(/\d+/)?.[0]) || null;
+  const pdfPage = Number(q.evidence?.pdfPage) || fallbackPdfPage;
+  if (!pdfPath || !pdfPage) return;
+  session.pdfError = null;
+  try {
+    const response = await fetch(pdfPath, { method: "HEAD", cache: "no-store" });
+    if (!response.ok) throw new Error(`PDFを読み込めません（${response.status}）`);
+    session.pdfOpenId = q.id;
+  } catch {
+    session.pdfOpenId = null;
+    session.pdfError = "PDFファイルが見つかりません。管理者に登録状況を確認してください。";
+  }
+  renderQuiz();
+  requestAnimationFrame(() => {
+    document.querySelector(session.pdfOpenId ? "#pdfViewer" : "#answerExplanation")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function toggleBookmark() {
@@ -442,8 +497,11 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#retryButton")) {
     session.selected = null;
     session.answered = false;
+    session.pdfOpenId = null;
+    session.pdfError = null;
     return renderQuiz();
   }
+  if (event.target.closest("[data-toggle-pdf]")) return toggleEvidencePdf();
   if (event.target.closest("#nextButton")) return nextQuestion();
 });
 

@@ -49,6 +49,9 @@ export function normalizeQuestion(input = {}) {
     section: text(input.section || evidence.section),
     evidence: {
       textbook: text(evidence.textbook),
+      textbookId: text(evidence.textbookId),
+      pdfPath: text(evidence.pdfPath),
+      pdfPage: Number(evidence.pdfPage) > 0 ? Number(evidence.pdfPage) : null,
       chapter: text(evidence.chapter || input.chapter),
       section: text(evidence.section || input.section),
       page: text(evidence.page),
@@ -78,6 +81,7 @@ export function catalogEntries(catalog) {
         entries.push({
           subject: subject.subject,
           subjectSlug: subject.subjectSlug,
+          textbook: subject.textbook || null,
           year: Number(year.year),
           ...form,
         });
@@ -110,13 +114,25 @@ export async function loadContentLibrary() {
     const year = Number(raw.year || entry.year || records[0]?.year);
     const form = text(raw.form || entry.form || records[0]?.form).toUpperCase();
     const subjectSlug = subjectSlugFor(subject, raw.subjectSlug || entry.subjectSlug);
-    const questions = records.map(normalizeQuestion);
+    const textbook = raw.textbook || entry.textbook || {};
+    const questions = records.map((record) => {
+      const question = normalizeQuestion(record);
+      question.evidence.textbook ||= text(textbook.title);
+      question.evidence.textbookId ||= text(textbook.textbookId);
+      question.evidence.pdfPath ||= text(textbook.pdfPath);
+      return question;
+    });
     return {
       path: entry.path,
       set: {
         version: Number(raw.version) || 1,
         subject,
         subjectSlug,
+        textbook: {
+          textbookId: text(textbook.textbookId),
+          title: text(textbook.title),
+          pdfPath: text(textbook.pdfPath),
+        },
         year,
         form,
         updatedAt: raw.updatedAt || entry.updatedAt || catalog.updatedAt,
@@ -144,7 +160,9 @@ export function compareQuestions(a, b) {
 export function validateQuestion(input, index = 0) {
   const question = normalizeQuestion(input);
   const errors = [];
+  const warnings = [];
   const add = (field, message) => errors.push({ index, id: question.id, field, message });
+  const warn = (field, message) => warnings.push({ index, id: question.id, field, message });
   if (!question.id) add("id", "id は必須です");
   if (!question.subject) add("subject", "subject は必須です");
   if (!question.year) add("year", "year は必須です");
@@ -171,15 +189,19 @@ export function validateQuestion(input, index = 0) {
   if (!input?.evidence || typeof input.evidence !== "object") add("evidence", "evidence は必須です");
   if (!question.evidence.page) add("evidence.page", "evidence.page は必須です（不明時は「要確認」）");
   if (!question.evidence.quote) add("evidence.quote", "evidence.quote は必須です（不明時は「要確認」）");
-  return { question, errors };
+  if (!question.evidence.textbookId) warn("evidence.textbookId", "textbookId がありません。catalogの科目設定があれば補完されます");
+  if (!question.evidence.pdfPath) warn("evidence.pdfPath", "pdfPath がありません。保存はできますがPDF表示は無効です");
+  if (!question.evidence.pdfPage) warn("evidence.pdfPage", "pdfPage がありません。pageから数値を取得できる場合は代用します");
+  return { question, errors, warnings };
 }
 
 export function validateQuestions(records) {
   if (!Array.isArray(records)) {
-    return { questions: [], errors: [{ index: -1, id: "", field: "questions", message: "questions が配列ではありません" }] };
+    return { questions: [], errors: [{ index: -1, id: "", field: "questions", message: "questions が配列ではありません" }], warnings: [] };
   }
   const checked = records.map((record, index) => validateQuestion(record, index));
   const errors = checked.flatMap((result) => result.errors);
+  const warnings = checked.flatMap((result) => result.warnings);
   const seen = new Map();
   checked.forEach(({ question }, index) => {
     if (!question.id) return;
@@ -189,16 +211,47 @@ export function validateQuestions(records) {
       seen.set(question.id, index);
     }
   });
-  return { questions: checked.map((result) => result.question), errors };
+  return { questions: checked.map((result) => result.question), errors, warnings };
 }
 
-export function buildCatalog(sets, updatedAt = new Date().toISOString()) {
+export function buildCatalog(sets, updatedAt = new Date().toISOString(), baseCatalog = null) {
   const grouped = new Map();
+  for (const subject of baseCatalog?.subjects || []) {
+    if (!subject.textbook) continue;
+    const subjectKey = `${subject.subject}\u0000${subject.subjectSlug}`;
+    grouped.set(subjectKey, {
+      subject: subject.subject,
+      subjectSlug: subject.subjectSlug,
+      textbook: {
+        textbookId: text(subject.textbook.textbookId),
+        title: text(subject.textbook.title),
+        pdfPath: text(subject.textbook.pdfPath),
+      },
+      years: new Map(),
+    });
+  }
   for (const [path, set] of sets) {
     if (!set.questions?.length) continue;
     const subjectKey = `${set.subject}\u0000${set.subjectSlug}`;
-    if (!grouped.has(subjectKey)) grouped.set(subjectKey, { subject: set.subject, subjectSlug: set.subjectSlug, years: new Map() });
+    const inferredEvidence = set.questions.find((question) => question.evidence?.pdfPath || question.evidence?.textbookId)?.evidence || {};
+    if (!grouped.has(subjectKey)) grouped.set(subjectKey, {
+      subject: set.subject,
+      subjectSlug: set.subjectSlug,
+      textbook: {
+        textbookId: text(set.textbook?.textbookId || inferredEvidence.textbookId),
+        title: text(set.textbook?.title || inferredEvidence.textbook),
+        pdfPath: text(set.textbook?.pdfPath || inferredEvidence.pdfPath),
+      },
+      years: new Map(),
+    });
     const subject = grouped.get(subjectKey);
+    if (!subject.textbook.pdfPath && (set.textbook?.pdfPath || inferredEvidence.pdfPath)) {
+      subject.textbook = {
+        textbookId: text(set.textbook?.textbookId || inferredEvidence.textbookId),
+        title: text(set.textbook?.title || inferredEvidence.textbook),
+        pdfPath: text(set.textbook?.pdfPath || inferredEvidence.pdfPath),
+      };
+    }
     if (!subject.years.has(set.year)) subject.years.set(set.year, []);
     subject.years.get(set.year).push({
       form: set.form,
@@ -215,6 +268,7 @@ export function buildCatalog(sets, updatedAt = new Date().toISOString()) {
       .map((subject) => ({
         subject: subject.subject,
         subjectSlug: subject.subjectSlug,
+        ...(subject.textbook.pdfPath || subject.textbook.textbookId ? { textbook: subject.textbook } : {}),
         years: [...subject.years.entries()]
           .sort(([a], [b]) => a - b)
           .map(([year, forms]) => ({ year, forms: forms.sort((a, b) => a.form.localeCompare(b.form, "ja")) })),

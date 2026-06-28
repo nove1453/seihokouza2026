@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Seiho Study Admin</title>
-  <link rel="stylesheet" href="./admin.css?v=20260628-2">
+  <link rel="stylesheet" href="./admin.css?v=20260628-3">
 </head>
 <body>
   <header class="admin-topbar">
@@ -140,9 +140,12 @@
         <h3>テキスト引用</h3>
         <div class="form-grid">
           <label class="wide">テキスト名<input name="textbook"></label>
+          <label>テキストID<input name="textbookId" placeholder="seiho-souron-2026"></label>
+          <label class="wide">PDFパス<input name="pdfPath" placeholder="data/textbooks/seiho-souron-2026.pdf"></label>
           <label>章<input name="chapter"></label>
           <label>節<input name="section"></label>
           <label>ページ番号<input name="page"></label>
+          <label>PDF実ページ<input name="pdfPage" type="number" min="1"></label>
         </div>
         <label>引用文・根拠要約<textarea name="quote" rows="5"></textarea></label>
       </div>
@@ -157,6 +160,6 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./admin.js?v=20260628-2"></script>
+  <script type="module" src="./admin.js?v=20260628-3"></script>
 </body>
 </html>
