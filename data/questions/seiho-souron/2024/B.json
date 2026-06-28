@@ -9,7 +9,7 @@
   },
   "year": 2024,
   "form": "B",
-  "updatedAt": "2026-06-28T10:08:22.495085Z",
+  "updatedAt": "2026-06-28T10:53:04.746Z",
   "questions": [
     {
       "id": "2024-B-001",
@@ -2316,17 +2316,17 @@
         "2024年度",
         "フォームB"
       ],
-      "chapter": "要確認",
-      "section": "社会構造の変化",
+      "chapter": "第6章 民間生命保険会社の今後のあり方",
+      "section": "社会構造の変化―高齢化・少子化",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "社会構造の変化",
-        "page": "要確認",
-        "quote": "社会構造の変化に関する該当箇所。正解「正」を確認する。"
+        "pdfPage": 190,
+        "chapter": "第6章 民間生命保険会社の今後のあり方",
+        "section": "社会構造の変化―高齢化・少子化",
+        "page": 182,
+        "quote": "高齢化に伴う扶養負担と社会保障給付費の増加、出生数減少による社会保険収支への影響を説明している。"
       }
     },
     {

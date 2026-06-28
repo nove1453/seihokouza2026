@@ -9,7 +9,7 @@
   },
   "year": 2022,
   "form": "C",
-  "updatedAt": "2026-06-28T10:35:08.084996Z",
+  "updatedAt": "2026-06-28T10:53:04.746Z",
   "questions": [
     {
       "id": "2022-keiri-C-001",
@@ -448,17 +448,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第2章 現価と終価",
       "section": "複利運用",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第2章 現価と終価",
         "section": "複利運用",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 20,
+        "quote": "複利計算、実利率、年平均利回り、現価・終価の計算式と例題を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 28
       }
     },
     {
@@ -523,17 +523,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第2章 現価と終価",
       "section": "複利運用",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第2章 現価と終価",
         "section": "複利運用",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 20,
+        "quote": "複利計算、実利率、年平均利回り、現価・終価の計算式と例題を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 28
       }
     },
     {
@@ -598,17 +598,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第2章 現価と終価",
       "section": "複利運用",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第2章 現価と終価",
         "section": "複利運用",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 21,
+        "quote": "複利計算、実利率、年平均利回り、現価・終価の計算式と例題を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 29
       }
     },
     {
@@ -673,17 +673,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第2章 現価と終価",
       "section": "複利運用",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第2章 現価と終価",
         "section": "複利運用",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 22,
+        "quote": "複利計算、実利率、年平均利回り、現価・終価の計算式と例題を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 30
       }
     },
     {
@@ -748,17 +748,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第2章 現価と終価",
       "section": "複利運用",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第2章 現価と終価",
         "section": "複利運用",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 26,
+        "quote": "複利計算、実利率、年平均利回り、現価・終価の計算式と例題を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 34
       }
     },
     {
@@ -2011,17 +2011,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第1章 生命保険と死亡表",
       "section": "死亡率",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第1章 生命保険と死亡表",
         "section": "死亡率",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 5,
+        "quote": "死亡率、生存率および死亡率の補整についての説明を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 13
       }
     },
     {
@@ -2054,17 +2054,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
+      "chapter": "第1章 生命保険と死亡表",
       "section": "生命保険契約と年齢",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
+        "chapter": "第1章 生命保険と死亡表",
         "section": "生命保険契約と年齢",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "page": 15,
+        "quote": "保険年齢方式と満年齢方式による年齢の取り扱いを参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 23
       }
     },
     {
@@ -2508,17 +2508,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
-      "section": "保険計理の基礎",
+      "chapter": "第1章 生命保険と死亡表",
+      "section": "死亡表の種類",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
-        "section": "保険計理の基礎",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "chapter": "第1章 生命保険と死亡表",
+        "section": "死亡表の種類",
+        "page": 11,
+        "quote": "国民生命表・経験生命表、総合表・選択表など死亡表の分類を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 19
       }
     },
     {
@@ -2728,17 +2728,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
-      "section": "加入年齢方式による転換",
+      "chapter": "第5章 解約返戻金と契約変更",
+      "section": "契約転換制度―加入年齢方式",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
-        "section": "加入年齢方式による転換",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "chapter": "第5章 解約返戻金と契約変更",
+        "section": "契約転換制度―加入年齢方式",
+        "page": 119,
+        "quote": "加入年齢方式（責任準備金差額払込み型）の価格と差額の払込方法を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 127
       }
     },
     {
@@ -2783,17 +2783,17 @@
         "フォームC",
         "生命保険計理"
       ],
-      "chapter": "生命保険計理",
-      "section": "アセット・シェア方式",
+      "chapter": "第6章 剰余金と契約者配当",
+      "section": "契約者配当の割当方法―アセット・シェア方式",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険計理",
-        "chapter": "生命保険計理",
-        "section": "アセット・シェア方式",
-        "page": "要確認",
-        "quote": "該当テキストに基づく。",
+        "chapter": "第6章 剰余金と契約者配当",
+        "section": "契約者配当の割当方法―アセット・シェア方式",
+        "page": 132,
+        "quote": "モデル収支残と年度末責任準備金との差額を基準に配当額を決める方式を参照。",
         "textbookId": "seiho-keiri-math-2026",
         "pdfPath": "data/textbooks/seiho-keiri-math-2026.pdf",
-        "pdfPage": null
+        "pdfPage": 140
       }
     },
     {

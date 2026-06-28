@@ -9,7 +9,7 @@
   },
   "year": 2024,
   "form": "A",
-  "updatedAt": "2026-06-28T10:08:22.495085Z",
+  "updatedAt": "2026-06-28T10:53:04.746Z",
   "questions": [
     {
       "id": "2024-A-001",
@@ -72,17 +72,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―死亡表",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「経験生命表」を確認する。"
+        "pdfPage": 23,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―死亡表",
+        "page": 15,
+        "quote": "死亡表には国民生命表と経験生命表があり、経験生命表は総合表・選択表・終局表に区分される。"
       }
     },
     {
@@ -146,17 +146,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―死亡表",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「低い」を確認する。"
+        "pdfPage": 23,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―死亡表",
+        "page": 15,
+        "quote": "死亡表には国民生命表と経験生命表があり、経験生命表は総合表・選択表・終局表に区分される。"
       }
     },
     {
@@ -220,17 +220,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―死亡表",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「総合表」を確認する。"
+        "pdfPage": 24,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―死亡表",
+        "page": 16,
+        "quote": "死亡表には国民生命表と経験生命表があり、経験生命表は総合表・選択表・終局表に区分される。"
       }
     },
     {
@@ -294,17 +294,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―死亡表",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「選択表」を確認する。"
+        "pdfPage": 24,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―死亡表",
+        "page": 16,
+        "quote": "死亡表には国民生命表と経験生命表があり、経験生命表は総合表・選択表・終局表に区分される。"
       }
     },
     {
@@ -368,17 +368,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―死亡表",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「終局表」を確認する。"
+        "pdfPage": 24,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―死亡表",
+        "page": 16,
+        "quote": "死亡表には国民生命表と経験生命表があり、経験生命表は総合表・選択表・終局表に区分される。"
       }
     },
     {
@@ -442,17 +442,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―危険選択の手段",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「診査医」を確認する。"
+        "pdfPage": 25,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―危険選択の手段",
+        "page": 17,
+        "quote": "危険選択は生命保険募集人、診査医、生命保険面接士、査定者・決定者によって行われ、告知も重要な手段となる。"
       }
     },
     {
@@ -516,17 +516,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―危険選択の手段",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「生命保険面接士」を確認する。"
+        "pdfPage": 25,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―危険選択の手段",
+        "page": 17,
+        "quote": "危険選択は生命保険募集人、診査医、生命保険面接士、査定者・決定者によって行われ、告知も重要な手段となる。"
       }
     },
     {
@@ -590,17 +590,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―危険選択の手段",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「告知義務」を確認する。"
+        "pdfPage": 25,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―危険選択の手段",
+        "page": 17,
+        "quote": "危険選択は生命保険募集人、診査医、生命保険面接士、査定者・決定者によって行われ、告知も重要な手段となる。"
       }
     },
     {
@@ -664,17 +664,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―危険選択の手段",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「告知書」を確認する。"
+        "pdfPage": 25,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―危険選択の手段",
+        "page": 17,
+        "quote": "危険選択は生命保険募集人、診査医、生命保険面接士、査定者・決定者によって行われ、告知も重要な手段となる。"
       }
     },
     {
@@ -738,17 +738,17 @@
         "2024年度",
         "フォームA"
       ],
-      "chapter": "要確認",
-      "section": "生命保険の技術的基礎",
+      "chapter": "第1章 生命保険の仕組み",
+      "section": "生命保険の技術的基礎―危険選択の手段",
       "evidence": {
         "textbook": "2026年版 生命保険講座 生命保険総論",
         "textbookId": "seiho-souron-2026",
         "pdfPath": "data/textbooks/seiho-souron-2026.pdf",
-        "pdfPage": null,
-        "chapter": "要確認",
-        "section": "生命保険の技術的基礎",
-        "page": "要確認",
-        "quote": "生命保険の技術的基礎に関する該当箇所。正解「道徳的な面」を確認する。"
+        "pdfPage": 25,
+        "chapter": "第1章 生命保険の仕組み",
+        "section": "生命保険の技術的基礎―危険選択の手段",
+        "page": 17,
+        "quote": "危険選択は生命保険募集人、診査医、生命保険面接士、査定者・決定者によって行われ、告知も重要な手段となる。"
       }
     },
     {
