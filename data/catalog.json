@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-28T00:17:48.555173Z",
+  "subjects": [
+    {
+      "subject": "生命保険総論",
+      "subjectSlug": "seiho-souron",
+      "years": [
+        {
+          "year": 2022,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2022/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2022/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2022/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            }
+          ]
+        },
+        {
+          "year": 2023,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2023/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2023/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2023/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            }
+          ]
+        },
+        {
+          "year": 2024,
+          "forms": [
+            {
+              "form": "A",
+              "path": "data/questions/seiho-souron/2024/A.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "B",
+              "path": "data/questions/seiho-souron/2024/B.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            },
+            {
+              "form": "C",
+              "path": "data/questions/seiho-souron/2024/C.json",
+              "questionCount": 50,
+              "updatedAt": "2026-06-28T00:17:48.555173Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
